@@ -1,9 +1,29 @@
 <%- include('partials/header') %>
 
-<section class="hero">
-  <h2>Minecraft 1.9+ PVP 娱乐榜单</h2>
-  <p>可搜索、可筛选、实时展示玩家综合实力评分。</p>
-  <input id="searchInput" type="search" placeholder="搜索玩家名..." />
+<section class="hero card hero-card">
+  <div class="hero-copy">
+    <p class="eyebrow">快速查榜</p>
+    <h2>先看段位，再看细项。</h2>
+    <p class="hero-text">直接搜名字就能定位玩家，榜单按排名排好，细分项目一眼就能看清。</p>
+  </div>
+
+  <div class="hero-actions">
+    <label class="search-wrap" for="searchInput">
+      <span>搜索玩家</span>
+      <input id="searchInput" type="search" placeholder="输入名字快速过滤" autocomplete="off" />
+    </label>
+
+    <div class="hero-stats">
+      <div class="stat-card">
+        <strong><%= stats.totalPlayers %></strong>
+        <span>名玩家</span>
+      </div>
+      <div class="stat-card">
+        <strong><%= stats.totalCategories %></strong>
+        <span>个细项</span>
+      </div>
+    </div>
+  </div>
 </section>
 
 <section class="card">
@@ -19,7 +39,7 @@
     </thead>
     <tbody>
       <% entries.forEach((entry) => { %>
-      <tr data-player="<%= entry.player.toLowerCase() %>">
+      <tr data-player="<%= entry.player.toLowerCase() %>" class="leaderboard-row">
         <td>#<%= entry.position %></td>
         <td><strong><%= entry.player %></strong></td>
         <td><span class="badge"><%= entry.rank %></span></td>
@@ -33,6 +53,9 @@
         </td>
       </tr>
       <% }) %>
+      <tr id="emptyStateRow" class="empty-state-row" hidden>
+        <td colspan="5">没有找到符合条件的玩家，换个名字试试。</td>
+      </tr>
     </tbody>
   </table>
 </section>

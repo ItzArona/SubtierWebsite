@@ -82,9 +82,13 @@ app.get('/', async (req, res, next) => {
     );
 
     res.render('index', {
-      title: 'Minecraft 1.9+ Subtier 娱乐榜单',
+      title: 'Subtier PvP 榜单',
       entries: entries.sort((a, b) => a.position - b.position),
-      categories
+      categories,
+      stats: {
+        totalPlayers: entries.length,
+        totalCategories: categories.length
+      }
     });
   } catch (error) {
     next(error);
@@ -156,7 +160,7 @@ app.get('/admin', requireAuth, async (req, res, next) => {
     );
 
     res.render('admin/dashboard', {
-      title: '榜单后台管理',
+      title: '后台管理',
       entries: entries.sort((a, b) => a.position - b.position),
       categoryKeys,
       error: null

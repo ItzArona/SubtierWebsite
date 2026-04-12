@@ -1,7 +1,13 @@
 <%- include('../partials/header') %>
 
 <section class="card">
-  <h2>新增榜单条目</h2>
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">后台操作</p>
+      <h2>新增一条</h2>
+    </div>
+    <p class="section-note">把排名、段位、积分补齐后直接提交即可，改动会马上写回数据文件。</p>
+  </div>
   <form method="post" action="/admin/entries" class="form-grid">
     <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
 
@@ -19,7 +25,13 @@
 </section>
 
 <section class="card">
-  <h2>当前榜单（可编辑）</h2>
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">当前数据</p>
+      <h2>可直接改</h2>
+    </div>
+    <p class="section-note">每一行都是一个独立表单，适合小幅调整，不用来回切页面。</p>
+  </div>
   <div class="admin-list">
     <% entries.forEach((entry) => { %>
       <form method="post" action="/admin/entries/<%= entry.id %>/update" class="entry-editor">
