@@ -1,0 +1,41 @@
+<%- include('partials/header') %>
+
+<section class="hero">
+  <h2>Minecraft 1.9+ PVP 娱乐榜单</h2>
+  <p>可搜索、可筛选、实时展示玩家综合实力评分。</p>
+  <input id="searchInput" type="search" placeholder="搜索玩家名..." />
+</section>
+
+<section class="card">
+  <table id="leaderboardTable">
+    <thead>
+      <tr>
+        <th>排名</th>
+        <th>玩家</th>
+        <th>段位</th>
+        <th>积分</th>
+        <th>细分项目</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% entries.forEach((entry) => { %>
+      <tr data-player="<%= entry.player.toLowerCase() %>">
+        <td>#<%= entry.position %></td>
+        <td><strong><%= entry.player %></strong></td>
+        <td><span class="badge"><%= entry.rank %></span></td>
+        <td><%= entry.points %></td>
+        <td>
+          <div class="chips">
+            <% Object.entries(entry.categories || {}).forEach(([key, val]) => { if (val) { %>
+            <span class="chip"><%= key %>: <%= val %></span>
+            <% } }) %>
+          </div>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</section>
+
+<script src="/public/main.js"></script>
+<%- include('partials/footer') %>
