@@ -105,7 +105,51 @@ button.danger { background: linear-gradient(180deg, rgba(255, 107, 107, 0.28), r
 .form-grid label { display: grid; gap: 0.35rem; color: var(--muted); }
 .admin-list { display: grid; gap: 0.7rem; }
 .entry-editor { display: grid; gap: 0.55rem; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
-.delete-form { display: flex; justify-content: flex-end; margin-top: -0.15rem; }
+.entry-editor-card {
+  border: 1px solid rgba(130, 159, 196, 0.22);
+  border-radius: 14px;
+  padding: 0.9rem;
+  background: rgba(11, 23, 38, 0.62);
+}
+.entry-head-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.entry-head-row h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+.entry-meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.entry-update-form {
+  display: grid;
+  gap: 0.65rem;
+}
+.entry-editor label {
+  display: grid;
+  gap: 0.32rem;
+  color: var(--muted);
+}
+.entry-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+.entry-actions button,
+.delete-form button {
+  width: auto;
+  min-width: 110px;
+}
+.delete-form {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
 
 table { width: 100%; border-collapse: collapse; }
 th, td { padding: 0.72rem 0.6rem; border-bottom: 1px solid rgba(130, 159, 196, 0.2); vertical-align: top; text-align: left; }
@@ -121,6 +165,10 @@ tbody tr:hover { background: rgba(118, 215, 255, 0.05); }
   padding: 0.75rem;
   border-radius: 12px;
   margin-bottom: 0.7rem;
+}
+.success-alert {
+  background: rgba(62, 198, 154, 0.16);
+  border-color: rgba(62, 198, 154, 0.45);
 }
 .inline-form { display: inline; }
 .link-button { width: auto; border: none; background: transparent; color: var(--accent); padding: 0; }
@@ -138,4 +186,9 @@ tbody tr:hover { background: rgba(118, 215, 255, 0.05); }
   nav { justify-content: flex-start; }
   .container { width: min(100vw - 1.2rem, 1200px); }
   table { display: block; overflow-x: auto; }
+  .entry-head-row { flex-direction: column; align-items: flex-start; }
+  .entry-actions,
+  .delete-form { justify-content: stretch; }
+  .entry-actions button,
+  .delete-form button { width: 100%; }
 }
