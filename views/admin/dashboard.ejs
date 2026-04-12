@@ -40,9 +40,21 @@
     </div>
     <p class="section-note">每一行都是一个独立表单，适合小幅调整，不用来回切页面。</p>
   </div>
+
+  <div class="admin-toolbar">
+    <label class="admin-filter-wrap" for="adminFilterInput">
+      <span>筛选条目</span>
+      <input id="adminFilterInput" type="search" placeholder="按玩家名、段位、ID 或分类关键词筛选" autocomplete="off" />
+    </label>
+    <p id="adminFilterMeta" class="admin-filter-meta">当前显示 <%= entries.length %> / <%= entries.length %> 条</p>
+  </div>
+
   <div class="admin-list">
     <% entries.forEach((entry) => { %>
-      <article class="entry-editor-card">
+      <article
+        class="entry-editor-card"
+        data-search="<%= [entry.player, entry.rank, entry.id, ...Object.entries(entry.categories || {}).flatMap(([key, value]) => [key, value || ''])].join(' ').toLowerCase() %>"
+      >
         <div class="entry-head-row">
           <h3>#<%= entry.position %> · <%= entry.player %></h3>
           <p class="entry-meta">ID: <%= entry.id %></p>
@@ -93,7 +105,13 @@
         </form>
       </article>
     <% }) %>
+
+    <div id="adminEmptyState" class="admin-empty-state" hidden>
+      没有匹配项，试试更短的关键词。
+    </div>
   </div>
 </section>
+
+<script src="/public/main.js"></script>
 
 <%- include('../partials/footer') %>

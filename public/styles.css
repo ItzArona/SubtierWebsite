@@ -103,6 +103,24 @@ button.danger { background: linear-gradient(180deg, rgba(255, 107, 107, 0.28), r
 
 .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; }
 .form-grid label { display: grid; gap: 0.35rem; color: var(--muted); }
+.admin-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 0.75rem;
+  margin-bottom: 0.9rem;
+}
+.admin-filter-wrap {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--muted);
+}
+.admin-filter-meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
 .admin-list { display: grid; gap: 0.7rem; }
 .entry-editor { display: grid; gap: 0.55rem; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
 .entry-editor-card {
@@ -110,6 +128,9 @@ button.danger { background: linear-gradient(180deg, rgba(255, 107, 107, 0.28), r
   border-radius: 14px;
   padding: 0.9rem;
   background: rgba(11, 23, 38, 0.62);
+}
+.entry-editor-card[hidden] {
+  display: none;
 }
 .entry-head-row {
   display: flex;
@@ -150,6 +171,14 @@ button.danger { background: linear-gradient(180deg, rgba(255, 107, 107, 0.28), r
   justify-content: flex-end;
   margin-top: 0.5rem;
 }
+.admin-empty-state {
+  text-align: center;
+  color: var(--muted);
+  border: 1px dashed rgba(130, 159, 196, 0.38);
+  border-radius: 14px;
+  padding: 1.1rem 0.9rem;
+  background: rgba(16, 30, 49, 0.35);
+}
 
 table { width: 100%; border-collapse: collapse; }
 th, td { padding: 0.72rem 0.6rem; border-bottom: 1px solid rgba(130, 159, 196, 0.2); vertical-align: top; text-align: left; }
@@ -186,6 +215,7 @@ tbody tr:hover { background: rgba(118, 215, 255, 0.05); }
   nav { justify-content: flex-start; }
   .container { width: min(100vw - 1.2rem, 1200px); }
   table { display: block; overflow-x: auto; }
+  .admin-toolbar { grid-template-columns: 1fr; align-items: stretch; }
   .entry-head-row { flex-direction: column; align-items: flex-start; }
   .entry-actions,
   .delete-form { justify-content: stretch; }
