@@ -1,8 +1,22 @@
 <%- include('../partials/header') %>
 
 <section class="card">
-  <h2>新增榜单条目</h2>
-  <form method="post" action="/admin/entries" class="form-grid">
+  <% if (successMessage) { %>
+    <div class="alert success-alert"><%= successMessage %></div>
+  <% } %>
+
+  <% if (errorMessage) { %>
+    <div class="alert"><%= errorMessage %></div>
+  <% } %>
+
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">后台操作</p>
+      <h2>新增一条</h2>
+    </div>
+    <p class="section-note">把排名、段位、积分补齐后直接提交即可，改动会马上写回数据文件。</p>
+  </div>
+  <form method="post" action="/admin/entries" class="form-grid admin-create-form">
     <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
 
     <label>排名<input name="position" type="number" min="1" max="9999" required /></label>
@@ -19,36 +33,85 @@
 </section>
 
 <section class="card">
-  <h2>当前榜单（可编辑）</h2>
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">当前数据</p>
+      <h2>可直接改</h2>
+    </div>
+    <p class="section-note">每一行都是一个独立表单，适合小幅调整，不用来回切页面。</p>
+  </div>
+
+  <div class="admin-toolbar">
+    <label class="admin-filter-wrap" for="adminFilterInput">
+      <span>筛选条目</span>
+      <input id="adminFilterInput" type="search" placeholder="按玩家名、段位、ID 或分类关键词筛选" autocomplete="off" />
+    </label>
+    <p id="adminFilterMeta" class="admin-filter-meta">当前显示 <%= entries.length %> / <%= entries.length %> 条</p>
+  </div>
+
   <div class="admin-list">
     <% entries.forEach((entry) => { %>
-      <form method="post" action="/admin/entries/<%= entry.id %>/update" class="entry-editor">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <article
+        class="entry-editor-card"
+        data-search="<%= [entry.player, entry.rank, entry.id, ...Object.entries(entry.categories || {}).flatMap(([key, value]) => [key, value || ''])].join(' ').toLowerCase() %>"
+      >
+        <div class="entry-head-row">
+          <h3>#<%= entry.position %> · <%= entry.player %></h3>
+          <p class="entry-meta">ID: <%= entry.id %></p>
+        </div>
 
-        <input name="position" type="number" min="1" max="9999" value="<%= entry.position %>" required />
-        <input name="player" type="text" maxlength="32" value="<%= entry.player %>" required />
-        <input name="rank" type="text" maxlength="64" value="<%= entry.rank %>" required />
-        <input name="points" type="number" min="0" max="9999" value="<%= entry.points %>" required />
+        <form method="post" action="/admin/entries/<%= entry.id %>/update" class="entry-update-form">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
 
-        <% categoryKeys.forEach((key) => { %>
-          <input
-            name="category__<%= key %>"
-            type="text"
-            maxlength="32"
-            value="<%= (entry.categories && entry.categories[key]) || '' %>"
-            placeholder="<%= key %>"
-          />
-        <% }) %>
+          <div class="entry-editor">
+            <label>
+              排名
+              <input name="position" type="number" min="1" max="9999" value="<%= entry.position %>" required />
+            </label>
+            <label>
+              玩家
+              <input name="player" type="text" maxlength="32" value="<%= entry.player %>" required />
+            </label>
+            <label>
+              段位
+              <input name="rank" type="text" maxlength="64" value="<%= entry.rank %>" required />
+            </label>
+            <label>
+              积分
+              <input name="points" type="number" min="0" max="9999" value="<%= entry.points %>" required />
+            </label>
 
-        <button type="submit">保存</button>
-      </form>
+            <% categoryKeys.forEach((key) => { %>
+              <label>
+                <%= key %>
+                <input
+                  name="category__<%= key %>"
+                  type="text"
+                  maxlength="32"
+                  value="<%= (entry.categories && entry.categories[key]) || '' %>"
+                  placeholder="未填写"
+                />
+              </label>
+            <% }) %>
+          </div>
+          <div class="entry-actions">
+            <button type="submit">保存改动</button>
+          </div>
+        </form>
 
-      <form method="post" action="/admin/entries/<%= entry.id %>/delete" class="delete-form" onsubmit="return confirm('确认删除该条目？');">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <button class="danger" type="submit">删除</button>
-      </form>
+        <form method="post" action="/admin/entries/<%= entry.id %>/delete" class="delete-form" onsubmit="return confirm('确认删除该条目？');">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <button class="danger" type="submit">删除</button>
+        </form>
+      </article>
     <% }) %>
+
+    <div id="adminEmptyState" class="admin-empty-state" hidden>
+      没有匹配项，试试更短的关键词。
+    </div>
   </div>
 </section>
+
+<script src="/public/main.js"></script>
 
 <%- include('../partials/footer') %>

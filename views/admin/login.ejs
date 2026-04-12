@@ -2,7 +2,7 @@
 
 <section class="card login-card">
   <h2>管理员登录</h2>
-  <p>请使用管理员账号进入榜单后台。</p>
+  <p>输入账号密码，进去后就能直接改榜单。</p>
 
   <% if (error) { %>
   <div class="alert"><%= error %></div>
@@ -21,7 +21,7 @@
       <input name="password" type="password" required minlength="8" maxlength="128" />
     </label>
 
-    <button type="submit">登录后台</button>
+    <button type="submit">进入后台</button>
   </form>
 </section>
 

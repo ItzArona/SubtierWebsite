@@ -82,9 +82,13 @@ app.get('/', async (req, res, next) => {
     );
 
     res.render('index', {
-      title: 'Minecraft 1.9+ Subtier 娱乐榜单',
+      title: 'Subtier PvP 榜单',
       entries: entries.sort((a, b) => a.position - b.position),
-      categories
+      categories,
+      stats: {
+        totalPlayers: entries.length,
+        totalCategories: categories.length
+      }
     });
   } catch (error) {
     next(error);
@@ -154,12 +158,25 @@ app.get('/admin', requireAuth, async (req, res, next) => {
     const categoryKeys = Array.from(
       new Set(entries.flatMap((entry) => Object.keys(entry.categories || {})))
     );
+    const successMessageMap = {
+      created: '条目已添加。',
+      updated: '条目已保存。',
+      deleted: '条目已删除。'
+    };
+    const errorMessageMap = {
+      invalid_form: '表单格式不正确，请检查后重试。',
+      not_found: '目标条目不存在，可能已被删除。',
+      invalid_request: '请求参数无效，请刷新后重试。'
+    };
+    const success = typeof req.query.success === 'string' ? req.query.success : '';
+    const error = typeof req.query.error === 'string' ? req.query.error : '';
 
     res.render('admin/dashboard', {
-      title: '榜单后台管理',
+      title: '后台管理',
       entries: entries.sort((a, b) => a.position - b.position),
       categoryKeys,
-      error: null
+      successMessage: successMessageMap[success] || null,
+      errorMessage: errorMessageMap[error] || null
     });
   } catch (error) {
     next(error);
@@ -184,7 +201,7 @@ app.post('/admin/entries', requireAuth, async (req, res) => {
   });
 
   await saveLeaderboard(entries);
-  return res.redirect('/admin');
+  return res.redirect('/admin?success=created');
 });
 
 app.post('/admin/entries/:id/update', requireAuth, async (req, res) => {
@@ -212,7 +229,7 @@ app.post('/admin/entries/:id/update', requireAuth, async (req, res) => {
   };
 
   await saveLeaderboard(entries);
-  return res.redirect('/admin');
+  return res.redirect('/admin?success=updated');
 });
 
 app.post('/admin/entries/:id/delete', requireAuth, async (req, res) => {
@@ -226,7 +243,7 @@ app.post('/admin/entries/:id/delete', requireAuth, async (req, res) => {
   const nextEntries = entries.filter((entry) => entry.id !== validParams.data.id);
 
   await saveLeaderboard(nextEntries);
-  return res.redirect('/admin');
+  return res.redirect('/admin?success=deleted');
 });
 
 app.use((req, res) => {
