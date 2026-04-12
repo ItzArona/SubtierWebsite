@@ -1,0 +1,28 @@
+<%- include('../partials/header') %>
+
+<section class="card login-card">
+  <h2>管理员登录</h2>
+  <p>请使用管理员账号进入榜单后台。</p>
+
+  <% if (error) { %>
+  <div class="alert"><%= error %></div>
+  <% } %>
+
+  <form method="post" action="/admin/login" class="form-grid">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+    <label>
+      用户名
+      <input name="username" type="text" required minlength="3" maxlength="32" />
+    </label>
+
+    <label>
+      密码
+      <input name="password" type="password" required minlength="8" maxlength="128" />
+    </label>
+
+    <button type="submit">登录后台</button>
+  </form>
+</section>
+
+<%- include('../partials/footer') %>

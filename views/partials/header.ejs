@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/public/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container header-row">
+        <h1>⚔️ Subtier PvP 娱乐榜单</h1>
+        <nav>
+          <a href="/">前台榜单</a>
+          <% if (currentUser) { %>
+          <a href="/admin">后台管理</a>
+          <form class="inline-form" action="/admin/logout" method="post">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <button class="link-button" type="submit">退出</button>
+          </form>
+          <% } else { %>
+          <a href="/admin/login">管理员登录</a>
+          <% } %>
+        </nav>
+      </div>
+    </header>
+    <main class="container">

@@ -1,0 +1,54 @@
+<%- include('../partials/header') %>
+
+<section class="card">
+  <h2>新增榜单条目</h2>
+  <form method="post" action="/admin/entries" class="form-grid">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+    <label>排名<input name="position" type="number" min="1" max="9999" required /></label>
+    <label>玩家<input name="player" type="text" maxlength="32" required /></label>
+    <label>段位<input name="rank" type="text" maxlength="64" required /></label>
+    <label>积分<input name="points" type="number" min="0" max="9999" required /></label>
+
+    <% categoryKeys.forEach((key) => { %>
+      <label><%= key %><input name="category__<%= key %>" type="text" maxlength="32" /></label>
+    <% }) %>
+
+    <button type="submit">添加条目</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2>当前榜单（可编辑）</h2>
+  <div class="admin-list">
+    <% entries.forEach((entry) => { %>
+      <form method="post" action="/admin/entries/<%= entry.id %>/update" class="entry-editor">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+        <input name="position" type="number" min="1" max="9999" value="<%= entry.position %>" required />
+        <input name="player" type="text" maxlength="32" value="<%= entry.player %>" required />
+        <input name="rank" type="text" maxlength="64" value="<%= entry.rank %>" required />
+        <input name="points" type="number" min="0" max="9999" value="<%= entry.points %>" required />
+
+        <% categoryKeys.forEach((key) => { %>
+          <input
+            name="category__<%= key %>"
+            type="text"
+            maxlength="32"
+            value="<%= (entry.categories && entry.categories[key]) || '' %>"
+            placeholder="<%= key %>"
+          />
+        <% }) %>
+
+        <button type="submit">保存</button>
+      </form>
+
+      <form method="post" action="/admin/entries/<%= entry.id %>/delete" class="delete-form" onsubmit="return confirm('确认删除该条目？');">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <button class="danger" type="submit">删除</button>
+      </form>
+    <% }) %>
+  </div>
+</section>
+
+<%- include('../partials/footer') %>

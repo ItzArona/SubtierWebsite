@@ -1,0 +1,74 @@
+:root {
+  --bg: #0f172a;
+  --panel: #111827;
+  --panel-2: #1f2937;
+  --text: #e5e7eb;
+  --muted: #9ca3af;
+  --accent: #22d3ee;
+  --danger: #ef4444;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: radial-gradient(circle at top, #1e293b, var(--bg));
+  color: var(--text);
+  font: 14px/1.6 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+
+.container { width: min(1200px, 92vw); margin: 0 auto; }
+.site-header, .site-footer { background: rgba(17, 24, 39, 0.85); border-bottom: 1px solid #334155; }
+.site-footer { border-top: 1px solid #334155; border-bottom: none; margin-top: 2rem; }
+.header-row { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+nav { display: flex; align-items: center; gap: 1rem; }
+a { color: var(--accent); text-decoration: none; }
+
+.hero { padding: 1.5rem 0 1rem; }
+.hero input { width: min(360px, 100%); }
+
+.card {
+  background: rgba(17, 24, 39, 0.85);
+  border: 1px solid #334155;
+  border-radius: 14px;
+  padding: 1rem;
+  margin: 1rem 0;
+}
+
+.badge { background: #164e63; color: #ecfeff; padding: 0.1rem 0.5rem; border-radius: 999px; }
+.chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.chip { background: #334155; color: #e2e8f0; border-radius: 999px; padding: 0.1rem 0.5rem; font-size: 12px; }
+
+input, button {
+  width: 100%;
+  background: var(--panel-2);
+  border: 1px solid #475569;
+  color: var(--text);
+  border-radius: 8px;
+  padding: 0.45rem 0.6rem;
+}
+button { cursor: pointer; background: #155e75; border-color: #0891b2; }
+button:hover { filter: brightness(1.1); }
+button.danger { background: #7f1d1d; border-color: #ef4444; }
+
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.7rem; }
+.form-grid label { display: grid; gap: 0.35rem; color: var(--muted); }
+.admin-list { display: grid; gap: 0.7rem; }
+.entry-editor { display: grid; gap: 0.55rem; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+.delete-form { display: flex; justify-content: flex-end; }
+
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 0.55rem; border-bottom: 1px solid #334155; vertical-align: top; text-align: left; }
+
+.alert {
+  background: #7f1d1d;
+  border: 1px solid #ef4444;
+  padding: 0.6rem;
+  border-radius: 8px;
+  margin-bottom: 0.7rem;
+}
+.inline-form { display: inline; }
+.link-button { width: auto; border: none; background: transparent; color: var(--accent); padding: 0; }
+
+@media (max-width: 768px) {
+  .header-row { flex-direction: column; align-items: flex-start; }
+}
