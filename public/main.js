@@ -81,7 +81,12 @@ if (adminFilterInput && adminCards.length > 0) {
     }
 
     if (adminFilterMeta) {
-      adminFilterMeta.textContent = `当前显示 ${visibleCards} / ${adminCards.length} 条`;
+      const total = adminFilterMeta.getAttribute('data-total');
+      if (total) {
+        adminFilterMeta.textContent = `总共 ${total} 条，本页筛选出 ${visibleCards} / ${adminCards.length} 条`;
+      } else {
+        adminFilterMeta.textContent = `本页筛选出 ${visibleCards} / ${adminCards.length} 条`;
+      }
     }
   }, 300);
 

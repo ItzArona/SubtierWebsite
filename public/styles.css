@@ -208,6 +208,8 @@ tbody tr:hover { background: rgba(118, 215, 255, 0.05); }
   to { opacity: 1; transform: translateY(0); }
 }
 
+.mobile-nav-toggle { display: none; }
+
 @media (max-width: 768px) {
   .header-row { flex-direction: row; flex-wrap: wrap; justify-content: space-between; align-items: center; }
   .brand-lockup { flex: 1; }
@@ -285,4 +287,3 @@ th[data-sort]::after {
 }
 th[data-sort].sort-asc::after { content: '⇑'; opacity: 1; color: var(--accent); }
 th[data-sort].sort-desc::after { content: '⇓'; opacity: 1; color: var(--accent); }
-.mobile-nav-toggle { display: none; }

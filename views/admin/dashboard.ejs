@@ -49,7 +49,7 @@
       <span>当前页面筛选条目</span>
       <input id="adminFilterInput" type="search" placeholder="按玩家名、段位、ID 或分类关键词筛选" autocomplete="off" />
     </label>
-    <p id="adminFilterMeta" class="admin-filter-meta">总共 <%= totalEntries %> 条，本页显示 <%= entries.length %> 条</p>
+    <p id="adminFilterMeta" class="admin-filter-meta" data-total="<%= totalEntries %>">总共 <%= totalEntries %> 条，本页显示 <%= entries.length %> 条</p>
   </div>
 
   <div class="admin-list">
