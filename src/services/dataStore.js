@@ -8,8 +8,8 @@ const USERS_FILE = path.join(DATA_DIR, 'users.json');
 
 const DEFAULT_ADMIN = {
   id: 'admin-1',
-  username: process.env.ADMIN_USERNAME || 'admin',
-  passwordHash: bcrypt.hashSync(process.env.ADMIN_PASSWORD || 'ChangeMe_12345', 12),
+  username: process.env.ADMIN_USERNAME || 'adminstrator',
+  passwordHash: bcrypt.hashSync(process.env.ADMIN_PASSWORD || 'ChangeMe_123s45', 12),
   role: 'admin',
   createdAt: new Date().toISOString()
 };

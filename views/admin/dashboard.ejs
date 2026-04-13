@@ -12,9 +12,9 @@
   <div class="section-head">
     <div>
       <p class="eyebrow">后台操作</p>
-      <h2>新增一条</h2>
+      <h2>新增条目</h2>
     </div>
-    <p class="section-note">把排名、段位、积分补齐后直接提交即可，改动会马上写回数据文件。</p>
+    <p class="section-note">把排名、段位、积分补齐后提交以新增条目</p>
   </div>
   <form method="post" action="/admin/entries" class="form-grid admin-create-form">
     <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
@@ -36,13 +36,13 @@
   <div class="section-head">
     <div>
       <p class="eyebrow">当前数据</p>
-      <h2>可直接改</h2>
+      <h2>总览</h2>
     </div>
     <div>
       <a href="/admin/export" class="button" style="display:inline-block; text-align:center; padding:0.5rem 1rem; background:var(--accent); color:var(--bg); border-radius:12px; text-decoration:none; font-weight:600;">导出为 CSV</a>
     </div>
   </div>
-  <p class="section-note">每一行都是一个独立表单，适合小幅调整，不用来回切页面。</p>
+  <p class="section-note">已记录的玩家数据</p>
 
   <div class="admin-toolbar">
     <label class="admin-filter-wrap" for="adminFilterInput">
@@ -110,7 +110,7 @@
     <% }) %>
 
     <div id="adminEmptyState" class="admin-empty-state" hidden>
-      没有匹配项，试试更短的关键词。
+      没有匹配项，试试更短的关键词
     </div>
   </div>
   

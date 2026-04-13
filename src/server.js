@@ -63,7 +63,7 @@ const loginLimiter = rateLimit({
   limit: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  message: '登录尝试过多，请稍后再试。'
+  message: '登录尝试过多，请稍后再试'
 });
 
 const csrfProtection = csurf();
@@ -84,7 +84,7 @@ app.get('/', async (req, res, next) => {
     );
 
     res.render('index', {
-      title: 'Subtier PvP 榜单',
+      title: 'Pico\'s Subtier',
       entries: entries.sort((a, b) => a.position - b.position),
       categories,
       stats: {
@@ -113,7 +113,7 @@ app.post('/admin/login', loginLimiter, async (req, res) => {
   if (!parsed.success) {
     return res.status(400).render('admin/login', {
       title: '管理员登录',
-      error: '请输入有效账号和密码。'
+      error: '请输入账号和密码。'
     });
   }
 
@@ -122,7 +122,7 @@ app.post('/admin/login', loginLimiter, async (req, res) => {
   if (!user) {
     return res.status(401).render('admin/login', {
       title: '管理员登录',
-      error: '账号或密码错误。'
+      error: '账号或密码错误'
     });
   }
 
@@ -130,7 +130,7 @@ app.post('/admin/login', loginLimiter, async (req, res) => {
   if (!isValidPassword) {
     return res.status(401).render('admin/login', {
       title: '管理员登录',
-      error: '账号或密码错误。'
+      error: '账号或密码错误'
     });
   }
 
@@ -138,7 +138,7 @@ app.post('/admin/login', loginLimiter, async (req, res) => {
     if (regenerateError) {
       return res.status(500).render('admin/login', {
         title: '管理员登录',
-        error: '登录失败，请稍后重试。'
+        error: '登录失败，请稍后重试'
       });
     }
 
@@ -161,14 +161,14 @@ app.get('/admin', requireAuth, async (req, res, next) => {
       new Set(entries.flatMap((entry) => Object.keys(entry.categories || {})))
     );
     const successMessageMap = {
-      created: '条目已添加。',
-      updated: '条目已保存。',
-      deleted: '条目已删除。'
+      created: '条目已添加',
+      updated: '条目已保存',
+      deleted: '条目已删除'
     };
     const errorMessageMap = {
-      invalid_form: '表单格式不正确，请检查后重试。',
-      not_found: '目标条目不存在，可能已被删除。',
-      invalid_request: '请求参数无效，请刷新后重试。'
+      invalid_form: '表单格式不正确，请检查后重试',
+      not_found: '目标条目不存在，可能已被删除',
+      invalid_request: '请求参数无效，请刷新后重试'
     };
     const success = typeof req.query.success === 'string' ? req.query.success : '';
     const error = typeof req.query.error === 'string' ? req.query.error : '';
@@ -292,7 +292,7 @@ app.post('/admin/entries/:id/delete', requireAuth, async (req, res) => {
 app.use((req, res) => {
   res.status(404).render('error', {
     title: '页面未找到',
-    message: '你访问的页面不存在。'
+    message: '你访问的页面不存在'
   });
 });
 
@@ -300,14 +300,14 @@ app.use((error, req, res, next) => {
   if (error.code === 'EBADCSRFTOKEN') {
     return res.status(403).render('error', {
       title: '请求无效',
-      message: '安全校验失败，请刷新页面后重试。'
+      message: '安全校验失败，请刷新页面后重试'
     });
   }
 
   console.error(error);
   return res.status(500).render('error', {
     title: '服务器错误',
-    message: '服务器开小差了，请稍后再试。'
+    message: '服务器开小差了，请稍后再试'
   });
 });
 
