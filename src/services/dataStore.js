@@ -17,10 +17,13 @@ const DEFAULT_ADMIN = {
 let cachedLeaderboard = null;
 let cachedUsers = null;
 
+let leaderboardPromise = null;
+let usersPromise = null;
+
 let isWriting = false;
 const writeQueue = [];
 
-async function flushWriterQueue() {
+async function flushWriteQueue() {
   if (isWriting || writeQueue.length === 0) return;
   isWriting = true;
   
@@ -34,14 +37,14 @@ async function flushWriterQueue() {
     reject(error);
   } finally {
     isWriting = false;
-    flushWriterQueue();
+    flushWriteQueue();
   }
 }
 
 function writeJson(filePath, data) {
   return new Promise((resolve, reject) => {
     writeQueue.push({ filePath, data, resolve, reject });
-    flushWriterQueue();
+    flushWriteQueue();
   });
 }
 
@@ -63,26 +66,39 @@ async function readJson(filePath, fallback) {
 
 async function getLeaderboard() {
   if (cachedLeaderboard) return cachedLeaderboard;
-  cachedLeaderboard = await readJson(LEADERBOARD_FILE, []);
-  return cachedLeaderboard;
+  if (!leaderboardPromise) {
+    leaderboardPromise = readJson(LEADERBOARD_FILE, []).then((data) => {
+      cachedLeaderboard = data;
+      leaderboardPromise = null;
+      return data;
+    });
+  }
+  return leaderboardPromise;
 }
 
 async function saveLeaderboard(entries) {
-  cachedLeaderboard = entries; // Update cache immediately
   await writeJson(LEADERBOARD_FILE, entries);
+  cachedLeaderboard = entries;
 }
 
 async function getUsers() {
   if (cachedUsers) return cachedUsers;
-  const users = await readJson(USERS_FILE, []);
-  if (users.length > 0) {
-    cachedUsers = users;
-    return users;
-  }
+  if (!usersPromise) {
+    usersPromise = (async () => {
+      const users = await readJson(USERS_FILE, []);
+      if (users.length > 0) {
+        cachedUsers = users;
+        usersPromise = null;
+        return users;
+      }
 
-  await writeJson(USERS_FILE, [DEFAULT_ADMIN]);
-  cachedUsers = [DEFAULT_ADMIN];
-  return cachedUsers;
+      await writeJson(USERS_FILE, [DEFAULT_ADMIN]);
+      cachedUsers = [DEFAULT_ADMIN];
+      usersPromise = null;
+      return cachedUsers;
+    })();
+  }
+  return usersPromise;
 }
 
 async function findUserByUsername(username) {

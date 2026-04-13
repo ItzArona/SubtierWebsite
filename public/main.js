@@ -123,10 +123,16 @@ if (thSortList.length > 0) {
         return currentSortAsc ? val : -val;
       });
 
-      sortedRows.forEach(row => {
-        tableBody.removeChild(row);
-        tableBody.insertBefore(row, emptyStateRow);
-      });
+      if (tableBody) {
+        const fragment = document.createDocumentFragment();
+        sortedRows.forEach(row => {
+          fragment.appendChild(row);
+        });
+        if (emptyStateRow) {
+          fragment.appendChild(emptyStateRow);
+        }
+        tableBody.appendChild(fragment);
+      }
     });
   });
 }

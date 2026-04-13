@@ -208,7 +208,14 @@ app.get('/admin/export', requireAuth, async (req, res, next) => {
     let csvContent = `排名,玩家,段位,积分,${categoryKeys.join(',')}\n`;
     csvContent += sortedEntries.map(entry => {
       const cats = categoryKeys.map(k => entry.categories?.[k] || '');
-      return [entry.position, entry.player, entry.rank, entry.points, ...cats].join(',');
+      const rowData = [entry.position, entry.player, entry.rank, entry.points, ...cats];
+      return rowData.map(val => {
+        const str = String(val);
+        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+          return `"${str.replace(/"/g, '""')}"`;
+        }
+        return str;
+      }).join(',');
     }).join('\n');
 
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
