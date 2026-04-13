@@ -13,7 +13,10 @@
           <p class="eyebrow">Minecraft 1.9+ PvP</p>
           <h1>Subtier 榜单</h1>
         </div>
-        <nav>
+        <button id="mobileNavToggle" class="mobile-nav-toggle" aria-label="Toggle navigation">
+          <span></span><span></span><span></span>
+        </button>
+        <nav id="siteNav">
           <a href="/">前台榜单</a>
           <% if (currentUser) { %>
           <a href="/admin">后台管理</a>

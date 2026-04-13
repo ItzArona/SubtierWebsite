@@ -6,6 +6,7 @@ const bcrypt = require('bcryptjs');
 const express = require('express');
 const session = require('express-session');
 const helmet = require('helmet');
+const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const csurf = require('csurf');
 const { z } = require('zod');
@@ -26,6 +27,7 @@ if (!process.env.SESSION_SECRET) {
 app.set('view engine', 'ejs');
 app.set('views', path.resolve(__dirname, '../views'));
 
+app.use(compression());
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -171,13 +173,47 @@ app.get('/admin', requireAuth, async (req, res, next) => {
     const success = typeof req.query.success === 'string' ? req.query.success : '';
     const error = typeof req.query.error === 'string' ? req.query.error : '';
 
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const totalEntries = entries.length;
+    const totalPages = Math.ceil(totalEntries / limit);
+    const offset = (page - 1) * limit;
+
+    const sortedEntries = entries.sort((a, b) => a.position - b.position);
+    const pagedEntries = sortedEntries.slice(offset, offset + limit);
+
     res.render('admin/dashboard', {
       title: '后台管理',
-      entries: entries.sort((a, b) => a.position - b.position),
+      entries: pagedEntries,
+      page,
+      totalPages,
+      totalEntries,
       categoryKeys,
       successMessage: successMessageMap[success] || null,
       errorMessage: errorMessageMap[error] || null
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/admin/export', requireAuth, async (req, res, next) => {
+  try {
+    const entries = await getLeaderboard();
+    const sortedEntries = entries.sort((a, b) => a.position - b.position);
+    const categoryKeys = Array.from(
+      new Set(entries.flatMap((entry) => Object.keys(entry.categories || {})))
+    );
+
+    let csvContent = `排名,玩家,段位,积分,${categoryKeys.join(',')}\n`;
+    csvContent += sortedEntries.map(entry => {
+      const cats = categoryKeys.map(k => entry.categories?.[k] || '');
+      return [entry.position, entry.player, entry.rank, entry.points, ...cats].join(',');
+    }).join('\n');
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="leaderboard.csv"');
+    res.send('\uFEFF' + csvContent); // Add BOM for Excel UTF-8 support
   } catch (error) {
     next(error);
   }
