@@ -59,7 +59,13 @@
         data-search="<%= [entry.player, entry.rank, entry.id, ...Object.entries(entry.categories || {}).flatMap(([key, value]) => [key, value || ''])].join(' ').toLowerCase() %>"
       >
         <div class="entry-head-row">
-          <h3>#<%= entry.position %> · <%= entry.player %></h3>
+          <h3 class="player-name <%= Number(entry.position) === 1 ? 'rank-1' : Number(entry.position) === 2 ? 'rank-2' : Number(entry.position) === 3 ? 'rank-3' : '' %>">
+            #<%= entry.position %> · 
+            <% if (Number(entry.position) === 1) { %><span class="rank-icon">👑</span><% } %>
+            <% if (Number(entry.position) === 2) { %><span class="rank-icon">🥈</span><% } %>
+            <% if (Number(entry.position) === 3) { %><span class="rank-icon">🥉</span><% } %>
+            <%= entry.player %>
+          </h3>
           <p class="entry-meta">ID: <%= entry.id %></p>
         </div>
 
