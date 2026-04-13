@@ -11,12 +11,15 @@
       <div class="container header-row">
         <div class="brand-lockup">
           <p class="eyebrow">Minecraft 1.9+ PvP</p>
-          <h1>Subtier 榜单</h1>
+          <h1>Pico's Subtier</h1>
         </div>
-        <nav>
-          <a href="/">前台榜单</a>
+        <button id="mobileNavToggle" class="mobile-nav-toggle" aria-label="Toggle navigation">
+          <span></span><span></span><span></span>
+        </button>
+        <nav id="siteNav">
+          <a href="/">榜单</a>
           <% if (currentUser) { %>
-          <a href="/admin">后台管理</a>
+          <a href="/admin">管理</a>
           <form class="inline-form" action="/admin/logout" method="post">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
             <button class="link-button" type="submit">退出</button>

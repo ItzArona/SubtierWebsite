@@ -3,8 +3,8 @@
 <section class="hero card hero-card">
   <div class="hero-copy">
     <p class="eyebrow">快速查榜</p>
-    <h2>先看段位，再看细项。</h2>
-    <p class="hero-text">直接搜名字就能定位玩家，榜单按排名排好，细分项目一眼就能看清。</p>
+    <h2>榜单总览</h2>
+    <p class="hero-text">此榜为娱乐性质，数据来源于Pico's Subtier</p>
   </div>
 
   <div class="hero-actions">
@@ -30,21 +30,28 @@
   <table id="leaderboardTable">
     <thead>
       <tr>
-        <th>排名</th>
-        <th>玩家</th>
-        <th>段位</th>
-        <th>积分</th>
-        <th>细分项目</th>
+        <th data-sort="position">排名</th>
+        <th data-sort="player">玩家</th>
+        <th data-sort="rank">段位</th>
+        <th data-sort="points">积分</th>
+        <th data-sort="categories">细分项目</th>
       </tr>
     </thead>
     <tbody>
       <% entries.forEach((entry) => { %>
-      <tr data-player="<%= entry.player.toLowerCase() %>" class="leaderboard-row">
-        <td>#<%= entry.position %></td>
-        <td><strong><%= entry.player %></strong></td>
-        <td><span class="badge"><%= entry.rank %></span></td>
-        <td><%= entry.points %></td>
-        <td>
+      <tr data-player="<%= entry.player.toLowerCase() %>" data-position="<%= entry.position %>" data-rank="<%= entry.rank %>" data-points="<%= entry.points %>" class="leaderboard-row">
+        <td data-label="排名">#<%= entry.position %></td>
+        <td data-label="玩家">
+          <strong class="player-name <%= Number(entry.position) === 1 ? 'rank-1' : Number(entry.position) === 2 ? 'rank-2' : Number(entry.position) === 3 ? 'rank-3' : '' %>">
+            <% if (Number(entry.position) === 1) { %><span class="rank-icon">👑</span><% } %>
+            <% if (Number(entry.position) === 2) { %><span class="rank-icon">🥈</span><% } %>
+            <% if (Number(entry.position) === 3) { %><span class="rank-icon">🥉</span><% } %>
+            <%= entry.player %>
+          </strong>
+        </td>
+        <td data-label="段位"><span class="badge" data-rank="<%= entry.rank %>"><%= entry.rank %></span></td>
+        <td data-label="积分"><%= entry.points %></td>
+        <td data-label="细分项目">
           <div class="chips">
             <% Object.entries(entry.categories || {}).forEach(([key, val]) => { if (val) { %>
             <span class="chip"><%= key %>: <%= val %></span>
@@ -54,7 +61,12 @@
       </tr>
       <% }) %>
       <tr id="emptyStateRow" class="empty-state-row" hidden>
-        <td colspan="5">没有找到符合条件的玩家，换个名字试试。</td>
+        <td colspan="5">
+          <div class="admin-empty-state">
+            <h3>没有找到该玩家</h3>
+            <p>请尝试搜索其他关键词</p>
+          </div>
+        </td>
       </tr>
     </tbody>
   </table>

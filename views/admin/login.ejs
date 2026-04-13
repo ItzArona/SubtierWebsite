@@ -1,28 +1,30 @@
 <%- include('../partials/header') %>
 
-<section class="card login-card">
-  <h2>管理员登录</h2>
-  <p>输入账号密码，进去后就能直接改榜单。</p>
+<div style="display: flex; justify-content: center; align-items: center; min-height: 50vh; margin-top: 2rem;">
+  <section class="card login-card" style="width: 100%; max-width: 400px; padding: 2rem;">
+    <h2 style="text-align: center; margin-bottom: 0.5rem;">管理员登录</h2>
+    <p style="text-align: center; color: var(--muted); margin-bottom: 1.5rem;">输入账号密码登入</p>
 
-  <% if (error) { %>
-  <div class="alert"><%= error %></div>
-  <% } %>
+    <% if (error) { %>
+    <div class="alert"><%= error %></div>
+    <% } %>
 
-  <form method="post" action="/admin/login" class="form-grid">
-    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <form method="post" action="/admin/login" style="display: flex; flex-direction: column; gap: 1rem;">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
 
-    <label>
-      用户名
-      <input name="username" type="text" required minlength="3" maxlength="32" />
-    </label>
+      <label style="display: grid; gap: 0.35rem; color: var(--muted);">
+        用户名
+        <input name="username" type="text" required />
+      </label>
 
-    <label>
-      密码
-      <input name="password" type="password" required minlength="8" maxlength="128" />
-    </label>
+      <label style="display: grid; gap: 0.35rem; color: var(--muted);">
+        密码
+        <input name="password" type="password" required />
+      </label>
 
-    <button type="submit">进入后台</button>
-  </form>
-</section>
+      <button type="submit" style="margin-top: 0.5rem;">进入后台</button>
+    </form>
+  </section>
+</div>
 
 <%- include('../partials/footer') %>
