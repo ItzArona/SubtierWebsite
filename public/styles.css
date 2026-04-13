@@ -84,6 +84,13 @@ a:hover { color: var(--accent-strong); }
 .section-head p { margin: 0.35rem 0 0; }
 
 .badge { background: rgba(118, 215, 255, 0.14); color: #dcf8ff; padding: 0.14rem 0.6rem; border-radius: 999px; border: 1px solid rgba(118, 215, 255, 0.2); }
+.badge[data-rank="SubtierNovice"] { background: rgba(255, 107, 107, 0.15); color: #ff9b9b; border-color: rgba(255, 107, 107, 0.25); }
+
+.player-name.rank-1 { color: #ffd700; text-shadow: 0 0 12px rgba(255, 215, 0, 0.35); }
+.player-name.rank-2 { color: #e0e0e0; text-shadow: 0 0 12px rgba(224, 224, 224, 0.35); }
+.player-name.rank-3 { color: #cd7f32; text-shadow: 0 0 12px rgba(205, 127, 50, 0.35); }
+.rank-icon { display: inline-block; margin-right: 0.25rem; font-size: 1.1em; transform: translateY(1px); }
+
 .chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
 .chip { background: rgba(148, 163, 184, 0.14); color: #d7e2f5; border-radius: 999px; padding: 0.14rem 0.55rem; font-size: 12px; border: 1px solid rgba(148, 163, 184, 0.12); }
 

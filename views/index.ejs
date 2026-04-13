@@ -41,8 +41,15 @@
       <% entries.forEach((entry) => { %>
       <tr data-player="<%= entry.player.toLowerCase() %>" data-position="<%= entry.position %>" data-rank="<%= entry.rank %>" data-points="<%= entry.points %>" class="leaderboard-row">
         <td data-label="排名">#<%= entry.position %></td>
-        <td data-label="玩家"><strong><%= entry.player %></strong></td>
-        <td data-label="段位"><span class="badge"><%= entry.rank %></span></td>
+        <td data-label="玩家">
+          <strong class="player-name <%= Number(entry.position) === 1 ? 'rank-1' : Number(entry.position) === 2 ? 'rank-2' : Number(entry.position) === 3 ? 'rank-3' : '' %>">
+            <% if (Number(entry.position) === 1) { %><span class="rank-icon">👑</span><% } %>
+            <% if (Number(entry.position) === 2) { %><span class="rank-icon">🥈</span><% } %>
+            <% if (Number(entry.position) === 3) { %><span class="rank-icon">🥉</span><% } %>
+            <%= entry.player %>
+          </strong>
+        </td>
+        <td data-label="段位"><span class="badge" data-rank="<%= entry.rank %>"><%= entry.rank %></span></td>
         <td data-label="积分"><%= entry.points %></td>
         <td data-label="细分项目">
           <div class="chips">
