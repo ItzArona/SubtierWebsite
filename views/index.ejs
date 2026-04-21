@@ -34,10 +34,16 @@
         <th data-sort="player">玩家</th>
         <th data-sort="rank">段位</th>
         <th data-sort="points">积分</th>
-        <th data-sort="categories"></th>
+        <th data-sort="categories">细分项目</th>
       </tr>
     </thead>
     <tbody>
+      <% 
+        let maxPoints = 0;
+        if (entries && entries.length > 0) {
+          maxPoints = Math.max(...entries.map(e => e.points || 0));
+        }
+      %>
       <% entries.forEach((entry) => { %>
       <tr data-player="<%= entry.player.toLowerCase() %>" data-position="<%= entry.position %>" data-rank="<%= entry.rank %>" data-points="<%= entry.points %>" class="leaderboard-row">
         <td data-label="排名">#<%= entry.position %></td>
@@ -50,7 +56,14 @@
           </strong>
         </td>
         <td data-label="段位"><span class="badge" data-rank="<%= entry.rank %>"><%= entry.rank %></span></td>
-        <td data-label="积分"><%= entry.points %></td>
+        <td data-label="积分">
+          <div class="points-wrapper">
+            <span class="points-text"><%= entry.points %></span>
+            <div class="points-bar-bg">
+              <div class="points-bar" style="width: <%= maxPoints > 0 ? ((entry.points / maxPoints) * 100).toFixed(2) + '%' : '0%' %>"></div>
+            </div>
+          </div>
+        </td>
         <td data-label="细分项目">
           <div class="chips">
             <% Object.entries(entry.categories || {}).forEach(([key, val]) => { if (val) { %>
