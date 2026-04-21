@@ -9,22 +9,34 @@
     <div class="alert"><%= error %></div>
     <% } %>
 
-    <form method="post" action="/admin/login" style="display: flex; flex-direction: column; gap: 1rem;">
+    <form id="loginForm" method="post" action="/admin/login" style="display: flex; flex-direction: column; gap: 1rem;">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
 
       <label style="display: grid; gap: 0.35rem; color: var(--muted);">
         用户名
-        <input name="username" type="text" required />
+        <input name="username" type="text" />
       </label>
 
       <label style="display: grid; gap: 0.35rem; color: var(--muted);">
         密码
-        <input name="password" type="password" required />
+        <input name="password" type="password" />
       </label>
 
-      <button type="submit" style="margin-top: 0.5rem;">进入后台</button>
+      <button id="loginBtn" type="submit" style="margin-top: 0.5rem;">进入后台</button>
     </form>
   </section>
 </div>
+
+<script>
+  const form = document.getElementById('loginForm');
+  const btn = document.getElementById('loginBtn');
+  if (form && btn) {
+    form.addEventListener('submit', () => {
+      btn.textContent = '登录中...';
+      btn.style.pointerEvents = 'none';
+      btn.style.opacity = '0.7';
+    });
+  }
+</script>
 
 <%- include('../partials/footer') %>

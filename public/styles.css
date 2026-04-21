@@ -1,3 +1,5 @@
+[hidden] { display: none !important; }
+
 :root {
   --bg: #07111f;
   --bg-accent: #0d1f33;
@@ -52,7 +54,7 @@ nav { display: flex; align-items: center; gap: 0.9rem; flex-wrap: wrap; justify-
 a { color: var(--accent); text-decoration: none; }
 a:hover { color: var(--accent-strong); }
 
-.hero-card { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr); gap: 1rem; align-items: end; }
+.hero-card { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); gap: 1rem; align-items: end; }
 .hero { padding: 1.35rem; margin: 1.2rem 0 1rem; }
 .hero-text { margin: 0.55rem 0 0; color: var(--muted); max-width: 58ch; }
 .hero-actions { display: grid; gap: 0.9rem; justify-items: stretch; }
@@ -84,7 +86,13 @@ a:hover { color: var(--accent-strong); }
 .section-head p { margin: 0.35rem 0 0; }
 
 .badge { background: rgba(118, 215, 255, 0.14); color: #dcf8ff; padding: 0.14rem 0.6rem; border-radius: 999px; border: 1px solid rgba(118, 215, 255, 0.2); }
-.badge[data-rank="SubtierNovice"] { background: rgba(255, 107, 107, 0.15); color: #ff9b9b; border-color: rgba(255, 107, 107, 0.25); }
+.badge[data-rank="SubtierRookie"] { background: rgba(170, 170, 170, 0.15); color: #aaaaaa; border-color: rgba(170, 170, 170, 0.25); }
+.badge[data-rank="SubtierNovice"] { background: rgba(155, 246, 255, 0.15); color: #9bf6ff; border-color: rgba(155, 246, 255, 0.25); }
+.badge[data-rank="SubtierCadet"] { background: rgba(0, 245, 212, 0.15); color: #00f5d4; border-color: rgba(0, 245, 212, 0.25); }
+.badge[data-rank="SubtierSpecialist"] { background: rgba(144, 224, 239, 0.15); color: #90e0ef; border-color: rgba(144, 224, 239, 0.25); }
+.badge[data-rank="SubtierAce"] { background: rgba(255, 155, 155, 0.15); color: #ff9b9b; border-color: rgba(255, 155, 155, 0.25); }
+.badge[data-rank="SubtierMaster"] { background: rgba(253, 255, 182, 0.15); color: #fdffb6; border-color: rgba(253, 255, 182, 0.25); }
+.badge[data-rank="SubtierGrandmaster"] { background: rgba(255, 214, 112, 0.15); color: #ffd670; border-color: rgba(255, 214, 112, 0.25); }
 
 .player-name.rank-1 { color: #ffd700; text-shadow: 0 0 12px rgba(255, 215, 0, 0.35); }
 .player-name.rank-2 { color: #e0e0e0; text-shadow: 0 0 12px rgba(224, 224, 224, 0.35); }
@@ -108,7 +116,7 @@ button { cursor: pointer; background: linear-gradient(180deg, rgba(118, 215, 255
 button:hover { filter: brightness(1.08); transform: translateY(-1px); }
 button.danger { background: linear-gradient(180deg, rgba(255, 107, 107, 0.28), rgba(176, 39, 39, 0.5)); border-color: rgba(255, 107, 107, 0.4); }
 
-.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 0.75rem; }
 .form-grid label { display: grid; gap: 0.35rem; color: var(--muted); }
 .admin-toolbar {
   display: grid;
@@ -192,7 +200,7 @@ th, td { padding: 0.72rem 0.6rem; border-bottom: 1px solid rgba(130, 159, 196, 0
 th { color: #d9e6f7; font-size: 0.92rem; }
 tbody tr { transition: background 0.2s ease, transform 0.2s ease, opacity 0.3s ease; }
 tbody tr:hover { background: rgba(118, 215, 255, 0.05); }
-.leaderboard-row { animation: riseIn 0.45s ease both; }
+.leaderboard-row { animation: riseIn 0.45s ease both; animation-delay: calc(var(--row-index) * 0.05s); }
 .empty-state-row td { text-align: center; color: var(--muted); padding: 1.5rem 0.6rem; }
 
 .alert {
@@ -256,19 +264,24 @@ tbody tr:hover { background: rgba(118, 215, 255, 0.05); }
   }
   
   td {
-    position: relative;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
     padding: 0.5rem 0;
     border: none;
     text-align: right;
+    gap: 1rem;
   }
   td::before {
     content: attr(data-label);
-    position: absolute;
-    left: 0;
-    top: 0.5rem;
+    flex-shrink: 0;
     text-align: left;
     font-weight: 600;
     color: var(--muted);
+  }
+  .chips {
+    justify-content: flex-end;
   }
   
   .admin-toolbar { grid-template-columns: 1fr; align-items: stretch; }

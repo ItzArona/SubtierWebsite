@@ -26,7 +26,7 @@ if (!process.env.SESSION_SECRET) {
 
 app.set('view engine', 'ejs');
 app.set('views', path.resolve(__dirname, '../views'));
-
+app.set('trust proxy', true); // 信任所有反向代理（如 Cloudflare Tunnel）
 app.use(compression());
 app.use(
   helmet({
@@ -113,7 +113,7 @@ app.post('/admin/login', loginLimiter, async (req, res) => {
   if (!parsed.success) {
     return res.status(400).render('admin/login', {
       title: '管理员登录',
-      error: '请输入账号和密码。'
+      error: '账号或密码错误'
     });
   }
 
@@ -298,17 +298,11 @@ app.use((req, res) => {
 
 app.use((error, req, res, next) => {
   if (error.code === 'EBADCSRFTOKEN') {
-    return res.status(403).render('error', {
-      title: '请求无效',
-      message: '安全校验失败，请刷新页面后重试'
-    });
+    return res.status(403).send('<h2>403 Forbidden</h2><p>安全校验失败，如果是Cloudflare环境请确保开启HTTPS并清除缓存。请<a href="/">返回首页</a>重试。</p>');
   }
 
   console.error(error);
-  return res.status(500).render('error', {
-    title: '服务器错误',
-    message: '服务器开小差了，请稍后再试'
-  });
+  return res.status(500).send('<h2>500 Server Error</h2><p>应用内部错误。</p>');
 });
 
 async function bootstrap() {
