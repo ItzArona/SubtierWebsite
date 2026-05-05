@@ -32,7 +32,7 @@ async function importExcelIfNeeded() {
   try {
     await fs.access(SOURCE_EXCEL);
   } catch (error) {
-    if (error && error.code === 'ENOENT') {
+    if (error.code === 'ENOENT') {
       return;
     }
     throw error;
