@@ -84,8 +84,10 @@ GET  /                          public leaderboard (existing, restyled)
 GET  /login                     unified login page (admin password, user password, OAuth button if enabled)
 POST /login                     password login (rate-limited)
 GET  /register                  registration form (404 when disabled)
-POST /register                  create unverified user, send verify email
-GET  /verify-email?token=...    consume verify token
+POST /register                  create unverified user, send verification code
+GET  /verify                    verification form for emailed code
+POST /verify                    consume verification code
+POST /resend-verification       resend verification code for unverified user
 POST /logout                    end session
 GET  /auth/microsoft            redirect to Microsoft, sets PKCE/state in session
 GET  /auth/microsoft/callback   complete code exchange, link or create user
