@@ -1,0 +1,83 @@
+<%- include('../partials/header') %>
+
+<%
+  const errMap = {
+    not_found: '目标用户不存在',
+    cannot_modify_super: '不能修改 SuperAdmin 账号',
+    cannot_modify_self: '不能对自己执行该操作',
+    unknown: '操作失败，请重试'
+  };
+  const okMap = {
+    promoted: '已提升为子管理员',
+    demoted: '已降级为普通用户',
+    deleted: '账号已删除'
+  };
+%>
+
+<% if (flashError) { %>
+  <div class="alert"><%= errMap[flashError] || '错误：' + flashError %></div>
+<% } %>
+<% if (flashSuccess && okMap[flashSuccess]) { %>
+  <div class="alert success-alert"><%= okMap[flashSuccess] %></div>
+<% } %>
+
+<section class="card">
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">用户管理</p>
+      <h2>账号与权限</h2>
+      <p class="section-note">仅 SuperAdmin 可见。SuperAdmin 自身不可被修改或删除。</p>
+    </div>
+  </div>
+
+  <div class="user-list">
+    <% users.forEach((user) => { %>
+      <article class="user-row <%= !user.emailVerified && user.role !== 'SuperAdmin' ? 'unverified' : '' %>">
+        <div>
+          <div class="user-name">
+            <%= user.username %>
+            <span class="role-pill role-<%= user.role.toLowerCase() %>"><%= user.role %></span>
+            <% if (!user.emailVerified && user.role !== 'SuperAdmin') { %>
+              <span class="unverified-flag">未验证</span>
+            <% } %>
+            <% if (user.oauthProvider === 'microsoft') { %>
+              <span class="unverified-flag" style="color:#9bf6ff; border-color:rgba(155,246,255,0.36); background:rgba(155,246,255,0.08);">Microsoft</span>
+            <% } %>
+          </div>
+          <div class="user-id"><%= user.id %></div>
+        </div>
+        <div>
+          <div class="user-email"><%= user.email %></div>
+          <% if (user.createdAt) { %>
+            <div class="user-id">注册于 <%= new Date(user.createdAt).toISOString().slice(0, 10) %></div>
+          <% } %>
+        </div>
+        <div class="user-actions">
+          <% if (user.role === 'SuperAdmin') { %>
+            <span class="toggle-meta">不可修改</span>
+          <% } else if (user.id === currentUser.id) { %>
+            <span class="toggle-meta">这是你自己</span>
+          <% } else { %>
+            <% if (user.role === 'User') { %>
+              <form method="post" action="/admin/users/<%= user.id %>/promote">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                <button class="tiny" type="submit">提升为 Admin</button>
+              </form>
+            <% } else if (user.role === 'Admin') { %>
+              <form method="post" action="/admin/users/<%= user.id %>/demote">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                <button class="tiny ghost" type="submit">降级为 User</button>
+              </form>
+            <% } %>
+            <form method="post" action="/admin/users/<%= user.id %>/delete" data-confirm="确定删除该用户？该操作不可恢复。">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <button class="tiny danger" type="submit">删除</button>
+            </form>
+          <% } %>
+        </div>
+      </article>
+    <% }) %>
+  </div>
+</section>
+
+<%- include('../partials/footer') %>

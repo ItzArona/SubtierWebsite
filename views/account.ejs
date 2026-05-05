@@ -1,0 +1,132 @@
+<%- include('partials/header') %>
+<%
+  const errMap = {
+    oauth_disabled: 'Microsoft OAuth 未启用，无法绑定',
+    already_linked: '该账号已经绑定过 Microsoft 账户，请先解绑',
+    state_invalid: '回调验证失败，请重试',
+    expired: '请求已过期，请重试',
+    no_subject: 'Microsoft 账号缺少 subject',
+    subject_taken: '该 Microsoft 账号已被另一个本站账户绑定',
+    not_linked: '当前账户尚未绑定 Microsoft',
+    needs_password: '解绑前请先为账号设置一个本地密码（在下方修改密码处直接设置即可），否则会无法登录',
+    invalid: '提交内容无效，请检查后重试',
+    mismatch: '两次输入的新密码不一致',
+    current_required: '请输入当前密码以确认身份',
+    current_wrong: '当前密码不正确'
+  };
+  const okMap = {
+    linked: 'Microsoft 账号绑定成功',
+    unlinked: 'Microsoft 账号已解绑',
+    password_changed: user.passwordHash ? '密码已更新' : '本地密码已设置'
+  };
+%>
+
+<% if (flashError) { %>
+  <div class="alert"><%= errMap[flashError] || flashError %></div>
+<% } %>
+<% if (flashSuccess && okMap[flashSuccess]) { %>
+  <div class="alert success-alert"><%= okMap[flashSuccess] %></div>
+<% } %>
+
+<section class="card">
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">账户</p>
+      <h2><%= user.username %></h2>
+      <p class="section-note">查看你的账号信息和已绑定的登录方式</p>
+    </div>
+    <span class="role-pill role-<%= user.role.toLowerCase() %>"><%= user.role %></span>
+  </div>
+
+  <div class="settings-grid">
+    <div class="settings-row">
+      <div>
+        <h3>邮箱</h3>
+        <p><%= user.email %></p>
+        <p style="margin-top: 0.4rem;">
+          <% if (user.emailVerified) { %>
+            <span class="role-pill" style="background:rgba(74,219,161,0.18); color:#b1f2d8; border:1px solid rgba(74,219,161,0.4);">已验证</span>
+          <% } else { %>
+            <span class="role-pill" style="background:rgba(255,200,115,0.14); color:#ffc873; border:1px solid rgba(255,200,115,0.4);">未验证</span>
+            <a href="/resend-verification?email=<%= encodeURIComponent(user.email) %>" class="toggle-meta" style="margin-left: 0.5rem;">重发验证邮件 →</a>
+          <% } %>
+        </p>
+      </div>
+      <div></div>
+    </div>
+
+    <div class="settings-row">
+      <div>
+        <h3>本地密码</h3>
+        <p>
+          <% if (user.passwordHash) { %>
+            已设置本地密码，可以直接用账号 / 邮箱 + 密码登录。下方可以修改密码。
+          <% } else { %>
+            尚未设置本地密码（你是通过 Microsoft 直接创建的账号）。在下方设置一个本地密码作为备用登录方式（无需输入当前密码）。
+          <% } %>
+        </p>
+      </div>
+      <div>
+        <% if (user.role !== 'SuperAdmin') { %>
+          <a class="button-link" href="/forgot">忘记密码？通过邮件重置</a>
+        <% } else { %>
+          <span class="toggle-meta">SuperAdmin 不能用邮件重置，请直接在下方修改</span>
+        <% } %>
+      </div>
+    </div>
+
+    <div class="settings-row">
+      <div>
+        <h3><%= user.passwordHash ? '修改密码' : '设置本地密码' %></h3>
+        <p>新密码至少 8 位。修改成功后当前会话不会下线，但其它设备的会话会保留至 cookie 过期。</p>
+      </div>
+      <form method="post" action="/account/password" style="display: grid; gap: 0.6rem;">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <% if (user.passwordHash) { %>
+          <label class="field">
+            当前密码
+            <input name="currentPassword" type="password" maxlength="128" required autocomplete="current-password" />
+          </label>
+        <% } %>
+        <label class="field">
+          新密码（至少 8 位）
+          <input name="password" type="password" minlength="8" maxlength="128" required autocomplete="new-password" />
+        </label>
+        <label class="field">
+          确认新密码
+          <input name="passwordConfirm" type="password" minlength="8" maxlength="128" required autocomplete="new-password" />
+        </label>
+        <button type="submit" style="width: auto; min-width: 140px; justify-self: end;"><%= user.passwordHash ? '更新密码' : '设置密码' %></button>
+      </form>
+    </div>
+
+    <div class="settings-row">
+      <div>
+        <h3>Microsoft 账号</h3>
+        <% if (user.oauthSubject) { %>
+          <p>当前已绑定 Microsoft 账号，可以在登录页用 Microsoft 一键登录。</p>
+          <p class="toggle-meta" style="margin-top: 0.3rem;">subject: <code><%= user.oauthSubject %></code></p>
+        <% } else if (microsoftReady) { %>
+          <p>尚未绑定。绑定后你可以在登录页直接用 Microsoft 登录，邮箱也会自动标记为已验证。</p>
+        <% } else { %>
+          <p>站点当前未启用 Microsoft 登录，请联系管理员。</p>
+        <% } %>
+      </div>
+      <div style="display: flex; gap: 0.55rem; align-items: flex-start; flex-wrap: wrap;">
+        <% if (user.oauthSubject) { %>
+          <form method="post" action="/account/unlink/microsoft" data-confirm="确认解绑 Microsoft 账号？解绑后将无法用 Microsoft 登录。">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <button class="ghost" type="submit">解绑</button>
+          </form>
+        <% } else if (microsoftReady) { %>
+          <a class="oauth-btn" href="/account/link/microsoft">
+            <span class="ms-tile" aria-hidden="true"></span>
+            绑定 Microsoft 账号
+          </a>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

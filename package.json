@@ -1,7 +1,7 @@
 {
   "name": "subtierwebsite",
   "version": "1.0.0",
-  "description": "给群友定制的一个Minecraft娱乐Tier榜单网站",
+  "description": "中文 Minecraft 1.9+ PvP Subtier 榜单网站",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",

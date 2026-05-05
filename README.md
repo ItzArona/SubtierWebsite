@@ -1,6 +1,6 @@
-# SubtierWebsite
+# CN Subtiers
 
-给群友定制的 Minecraft 1.9+ PvP 娱乐榜单网站，支持：
+中文 Minecraft 1.9+ PvP Subtier 榜单网站，支持：
 
 - 读取仓库中的 `1.9+Subtier Overall(1).xlsx` 初始化榜单数据
 - 前台展示榜单（搜索玩家、展示各模式 Subtier）

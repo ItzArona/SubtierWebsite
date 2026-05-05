@@ -4,30 +4,50 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title><%= title %></title>
-    <link rel="stylesheet" href="/public/styles.css" />
+    <link rel="stylesheet" href="/public/styles.css?v=3.0" />
   </head>
   <body>
     <header class="site-header">
       <div class="container header-row">
-        <div class="brand-lockup">
+        <a class="brand-lockup" href="/">
           <p class="eyebrow">Minecraft 1.9+ PvP</p>
-          <h1>Pico's Subtier</h1>
-        </div>
+          <h1>CN Subtiers</h1>
+        </a>
         <button id="mobileNavToggle" class="mobile-nav-toggle" aria-label="Toggle navigation">
           <span></span><span></span><span></span>
         </button>
         <nav id="siteNav">
-          <a href="/">榜单</a>
+          <a href="/" class="nav-link">榜单</a>
+          <% if (currentUser && (currentUser.role === 'Admin' || currentUser.role === 'SuperAdmin')) { %>
+            <a href="/admin" class="nav-link">仪表盘</a>
+            <a href="/admin/categories" class="nav-link">细分项目</a>
+          <% } %>
+          <% if (currentUser && currentUser.role === 'SuperAdmin') { %>
+            <a href="/admin/users" class="nav-link">用户</a>
+            <a href="/admin/settings" class="nav-link">设置</a>
+          <% } %>
           <% if (currentUser) { %>
-          <a href="/admin">管理</a>
-          <form class="inline-form" action="/admin/logout" method="post">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-            <button class="link-button" type="submit">退出</button>
-          </form>
+            <a href="/account" class="nav-link">账户</a>
+            <span class="nav-user">
+              <span class="role-pill role-<%= currentUser.role.toLowerCase() %>"><%= currentUser.role %></span>
+              <%= currentUser.username %>
+            </span>
+            <form class="inline-form" action="/logout" method="post">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <button class="link-button" type="submit">退出</button>
+            </form>
           <% } else { %>
-          <a href="/admin/login">管理员登录</a>
+            <a href="/login" class="nav-link">登录</a>
+            <% if (publicSettings && publicSettings.registrationEnabled) { %>
+              <a href="/register" class="nav-link nav-link-cta">注册</a>
+            <% } %>
           <% } %>
         </nav>
       </div>
     </header>
+    <% if (typeof flash !== 'undefined' && flash) { %>
+      <div class="container">
+        <div class="alert <%= flash.kind === 'success' ? 'success-alert' : '' %> flash-banner"><%= flash.text %></div>
+      </div>
+    <% } %>
     <main class="container">

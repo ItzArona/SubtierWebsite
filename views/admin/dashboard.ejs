@@ -1,138 +1,140 @@
 <%- include('../partials/header') %>
 
+<% if (successMessage) { %>
+  <div class="alert success-alert"><%= successMessage %></div>
+<% } %>
+<% if (errorMessage) { %>
+  <div class="alert"><%= errorMessage %></div>
+<% } %>
+
 <section class="card">
-  <% if (successMessage) { %>
-    <div class="alert success-alert"><%= successMessage %></div>
-  <% } %>
-
-  <% if (errorMessage) { %>
-    <div class="alert"><%= errorMessage %></div>
-  <% } %>
-
   <div class="section-head">
     <div>
-      <p class="eyebrow">后台操作</p>
-      <h2>新增条目</h2>
+      <p class="eyebrow">仪表盘 · 总览</p>
+      <h2>榜单条目</h2>
+      <p class="section-note">总共 <%= totalEntries %> 条 · 当前第 <%= page %> / <%= totalPages %> 页</p>
     </div>
-    <p class="section-note">把排名、段位、积分补齐后提交以新增条目</p>
+    <div class="button-row">
+      <a href="/admin/categories" class="button-link">细分项目</a>
+      <a href="/admin/export" class="button-link">导出 CSV</a>
+    </div>
   </div>
-  <form method="post" action="/admin/entries" class="form-grid admin-create-form">
+</section>
+
+<section class="card">
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">新增</p>
+      <h2>添加新条目</h2>
+    </div>
+    <p class="section-note">填写排名、玩家、段位、积分（细分项目可留空）</p>
+  </div>
+
+  <form method="post" action="/admin/entries" class="form-grid">
     <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-
-    <label>排名<input name="position" type="number" min="1" max="9999" required /></label>
-    <label>玩家<input name="player" type="text" maxlength="32" required /></label>
-    <label>段位<input name="rank" type="text" maxlength="64" required /></label>
-    <label>积分<input name="points" type="number" min="0" max="9999" required /></label>
-
+    <label class="field">排名 <input name="position" type="number" min="1" max="9999" required /></label>
+    <label class="field">玩家 <input name="player" type="text" maxlength="32" required /></label>
+    <label class="field">段位 <input name="rank" type="text" maxlength="64" required /></label>
+    <label class="field">积分 <input name="points" type="number" min="0" max="9999" required /></label>
+    <label class="field">测试服务器（可选） <input name="testServer" type="text" maxlength="64" placeholder="如：Pico Test #3" /></label>
     <% categoryKeys.forEach((key) => { %>
-      <label><%= key %><input name="category__<%= key %>" type="text" maxlength="32" /></label>
+      <label class="field"><%= key %> <input name="category__<%= key %>" type="text" maxlength="32" /></label>
     <% }) %>
-
-    <button type="submit">添加条目</button>
+    <div style="grid-column: 1 / -1; display: flex; justify-content: flex-end;">
+      <button type="submit" style="width: auto; min-width: 160px;">添加条目</button>
+    </div>
   </form>
 </section>
 
 <section class="card">
   <div class="section-head">
     <div>
-      <p class="eyebrow">当前数据</p>
-      <h2>总览</h2>
-    </div>
-    <div>
-      <a href="/admin/export" class="button" style="display:inline-block; text-align:center; padding:0.5rem 1rem; background:var(--accent); color:var(--bg); border-radius:12px; text-decoration:none; font-weight:600;">导出为 CSV</a>
+      <p class="eyebrow">条目列表</p>
+      <h2>编辑现有数据</h2>
     </div>
   </div>
-  <p class="section-note">已记录的玩家数据</p>
 
   <div class="admin-toolbar">
     <label class="admin-filter-wrap" for="adminFilterInput">
-      <span>当前页面筛选条目</span>
-      <input id="adminFilterInput" type="search" placeholder="按玩家名、段位、ID 或分类关键词筛选" autocomplete="off" />
+      <span>筛选当前页面</span>
+      <input id="adminFilterInput" type="search" placeholder="按玩家、段位、ID、分类关键词…" autocomplete="off" />
     </label>
-    <p id="adminFilterMeta" class="admin-filter-meta" data-total="<%= totalEntries %>">总共 <%= totalEntries %> 条，本页显示 <%= entries.length %> 条</p>
+    <p id="adminFilterMeta" class="admin-filter-meta" data-total="<%= totalEntries %>">
+      总共 <%= totalEntries %> 条 · 本页显示 <%= entries.length %> 条
+    </p>
   </div>
 
   <div class="admin-list">
     <% entries.forEach((entry) => { %>
       <article
         class="entry-editor-card"
-        data-search="<%= [entry.player, entry.rank, entry.id, ...Object.entries(entry.categories || {}).flatMap(([key, value]) => [key, value || ''])].join(' ').toLowerCase() %>"
+        data-search="<%= [entry.player, entry.rank, entry.id, entry.testServer || '', ...Object.entries(entry.categories || {}).flatMap(([k, v]) => [k, v || ''])].join(' ').toLowerCase() %>"
       >
         <div class="entry-head-row">
           <h3 class="player-name <%= Number(entry.position) === 1 ? 'rank-1' : Number(entry.position) === 2 ? 'rank-2' : Number(entry.position) === 3 ? 'rank-3' : '' %>">
-            #<%= entry.position %> · 
+            #<%= entry.position %> ·
             <% if (Number(entry.position) === 1) { %><span class="rank-icon">👑</span><% } %>
             <% if (Number(entry.position) === 2) { %><span class="rank-icon">🥈</span><% } %>
             <% if (Number(entry.position) === 3) { %><span class="rank-icon">🥉</span><% } %>
             <%= entry.player %>
+            <% if (entry.testServer) { %>
+              <span class="test-server-tag" style="margin-left:0.5rem; vertical-align: middle;"><%= entry.testServer %></span>
+            <% } %>
           </h3>
           <p class="entry-meta">ID: <%= entry.id %></p>
         </div>
 
-        <form method="post" action="/admin/entries/<%= entry.id %>/update" class="entry-update-form">
+        <form method="post" action="/admin/entries/<%= entry.id %>/quick" class="quick-edit-row">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-
-          <div class="entry-editor">
-            <label>
-              排名
-              <input name="position" type="number" min="1" max="9999" value="<%= entry.position %>" required />
-            </label>
-            <label>
-              玩家
-              <input name="player" type="text" maxlength="32" value="<%= entry.player %>" required />
-            </label>
-            <label>
-              段位
-              <input name="rank" type="text" maxlength="64" value="<%= entry.rank %>" required />
-            </label>
-            <label>
-              积分
-              <input name="points" type="number" min="0" max="9999" value="<%= entry.points %>" required />
-            </label>
-
-            <% categoryKeys.forEach((key) => { %>
-              <label>
-                <%= key %>
-                <input
-                  name="category__<%= key %>"
-                  type="text"
-                  maxlength="32"
-                  value="<%= (entry.categories && entry.categories[key]) || '' %>"
-                  placeholder="未填写"
-                />
-              </label>
-            <% }) %>
-          </div>
-          <div class="entry-actions">
-            <button type="submit">保存改动</button>
-          </div>
+          <label class="field">积分 <input name="points" type="number" min="0" max="9999" value="<%= entry.points %>" /></label>
+          <label class="field">段位 <input name="rank" type="text" maxlength="64" value="<%= entry.rank %>" /></label>
+          <label class="field">测试服务器 <input name="testServer" type="text" maxlength="64" value="<%= entry.testServer || '' %>" placeholder="留空清除" /></label>
+          <button type="submit" class="tiny" style="align-self: end;">保存快编</button>
         </form>
 
-        <form method="post" action="/admin/entries/<%= entry.id %>/delete" class="delete-form" onsubmit="return confirm('确认删除该条目？');">
-          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-          <button class="danger" type="submit">删除</button>
-        </form>
+        <details class="entry-full">
+          <summary>展开完整编辑</summary>
+          <form method="post" action="/admin/entries/<%= entry.id %>/update" class="entry-update-form">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <div class="entry-editor">
+              <label class="field">排名 <input name="position" type="number" min="1" max="9999" value="<%= entry.position %>" required /></label>
+              <label class="field">玩家 <input name="player" type="text" maxlength="32" value="<%= entry.player %>" required /></label>
+              <label class="field">段位 <input name="rank" type="text" maxlength="64" value="<%= entry.rank %>" required /></label>
+              <label class="field">积分 <input name="points" type="number" min="0" max="9999" value="<%= entry.points %>" required /></label>
+              <label class="field">测试服务器 <input name="testServer" type="text" maxlength="64" value="<%= entry.testServer || '' %>" /></label>
+              <% categoryKeys.forEach((key) => { %>
+                <label class="field"><%= key %>
+                  <input name="category__<%= key %>" type="text" maxlength="32" value="<%= (entry.categories && entry.categories[key]) || '' %>" placeholder="未填写" />
+                </label>
+              <% }) %>
+            </div>
+            <div class="entry-actions">
+              <button type="submit">保存全部改动</button>
+            </div>
+          </form>
+
+          <form method="post" action="/admin/entries/<%= entry.id %>/delete" class="delete-form" data-confirm="确认删除该条目？该操作不可恢复。">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <button class="danger" type="submit">删除</button>
+          </form>
+        </details>
       </article>
     <% }) %>
 
-    <div id="adminEmptyState" class="admin-empty-state" hidden>
-      没有匹配项，试试更短的关键词
-    </div>
+    <div id="adminEmptyState" class="admin-empty-state" hidden>没有匹配项，试试更短的关键词</div>
   </div>
-  
+
   <% if (totalPages > 1) { %>
-  <div style="display:flex; justify-content:center; gap:0.5rem; margin-top:2rem;">
+  <nav class="pagination" aria-label="分页">
     <% if (page > 1) { %>
-      <a href="/admin?page=<%= page - 1 %>" style="color:var(--accent); text-decoration:none; padding:0.5rem 1rem; border:1px solid var(--border); border-radius:8px;">上一页</a>
+      <a href="/admin?page=<%= page - 1 %>">← 上一页</a>
     <% } %>
-    <span style="color:var(--muted); padding:0.5rem 1rem;">第 <%= page %> / <%= totalPages %> 页</span>
+    <span class="current">第 <%= page %> / <%= totalPages %> 页</span>
     <% if (page < totalPages) { %>
-      <a href="/admin?page=<%= page + 1 %>" style="color:var(--accent); text-decoration:none; padding:0.5rem 1rem; border:1px solid var(--border); border-radius:8px;">下一页</a>
+      <a href="/admin?page=<%= page + 1 %>">下一页 →</a>
     <% } %>
-  </div>
+  </nav>
   <% } %>
 </section>
-
-<script src="/public/main.js"></script>
 
 <%- include('../partials/footer') %>
