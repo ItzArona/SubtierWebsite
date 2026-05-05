@@ -20,9 +20,10 @@ function remainingCooldownSeconds(user, op) {
   return ms > 0 ? Math.ceil(ms / 1000) : 0;
 }
 
-async function stampMailSent(user, op) {
+async function stampMailSent(user, op, updates = {}) {
   const next = {
     ...user,
+    ...updates,
     mailCooldown: { ...(user.mailCooldown || {}), [op]: new Date().toISOString() }
   };
   await upsertUser(next);

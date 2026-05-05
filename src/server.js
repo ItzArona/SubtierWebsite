@@ -398,7 +398,7 @@ app.post('/resend-verification', mailIpLimiter, async (req, res) => {
       console.error('重发验证邮件失败:', error.message);
       return res.status(502).render('verify', { title: '邮箱验证', error: '邮件发送失败，请稍后重试', success: null, email });
     }
-    await stampMailSent({ ...user, verifyToken: code, verifyExpires, verifyAttempts: 0 }, 'verify');
+    await stampMailSent(user, 'verify', { verifyToken: code, verifyExpires, verifyAttempts: 0 });
   }
 
   res.render('verify', { title: '邮箱验证', error: null, success: successText, email });
@@ -435,12 +435,11 @@ app.post('/forgot', mailIpLimiter, async (req, res) => {
       console.error('发送重置邮件失败:', error.message);
       return res.status(502).render('forgot', { title: '忘记密码', error: '邮件发送失败，请稍后重试', success: null, email });
     }
-    await stampMailSent({
-      ...user,
+    await stampMailSent(user, 'reset', {
       passwordResetToken: code,
       passwordResetExpires: new Date(Date.now() + RESET_TTL_MS).toISOString(),
       resetAttempts: 0
-    }, 'reset');
+    });
   }
 
   // Always redirect to /reset so the user has the form ready, regardless of whether the email exists.

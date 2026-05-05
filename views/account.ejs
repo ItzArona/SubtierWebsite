@@ -51,7 +51,7 @@
             <form method="post" action="/resend-verification" style="display:inline; margin-left: 0.5rem;">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
               <input type="hidden" name="email" value="<%= user.email %>" />
-              <button type="submit" class="toggle-meta" style="background:none;border:none;padding:0;width:auto;">重发验证邮件 →</button>
+              <button type="submit" class="toggle-meta" style="background:none;border:none;padding:0;width:auto;cursor:pointer;">重发验证邮件 →</button>
             </form>
           <% } %>
         </p>
