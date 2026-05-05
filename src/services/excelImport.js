@@ -25,11 +25,7 @@ function toNumber(value) {
 
 async function importExcelIfNeeded() {
   const existing = await getLeaderboard();
-  if (existing.length > 0) {
-    return;
-  }
-
-  if (!fs.existsSync(SOURCE_EXCEL)) {
+  if (existing.length > 0 || !fs.existsSync(SOURCE_EXCEL)) {
     return;
   }
 
