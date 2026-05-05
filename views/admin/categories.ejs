@@ -1,0 +1,78 @@
+<%- include('../partials/header') %>
+
+<%
+  const errMap = {
+    invalid: '输入格式不正确',
+    CATEGORY_EXISTS: '名称已被占用',
+    CATEGORY_NOT_FOUND: '细分项目不存在',
+    unknown: '操作失败，请重试'
+  };
+  const okMap = {
+    added: '已新增细分项目',
+    renamed: '已重命名',
+    deleted: '已删除',
+    saved: '已保存'
+  };
+%>
+
+<% if (flashError) { %>
+  <div class="alert"><%= errMap[flashError] || '错误：' + flashError %></div>
+<% } %>
+<% if (flashSuccess && okMap[flashSuccess]) { %>
+  <div class="alert success-alert"><%= okMap[flashSuccess] %></div>
+<% } %>
+
+<section class="card">
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">细分项目</p>
+      <h2>新增项目</h2>
+      <p class="section-note">添加后会以 null 值出现在所有玩家条目里，等待管理员手动填值。</p>
+    </div>
+  </div>
+  <form method="post" action="/admin/categories/add" style="display: grid; grid-template-columns: 1fr auto; gap: 0.6rem; align-items: end;">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <label class="field">
+      项目名称
+      <input name="name" type="text" maxlength="48" pattern="[A-Za-z0-9 _\-]+" required placeholder="例如：Crystal PvP" />
+    </label>
+    <button type="submit" style="width: auto; min-width: 130px;">新增</button>
+  </form>
+</section>
+
+<section class="card">
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">现有项目</p>
+      <h2>重命名 / 删除</h2>
+      <p class="section-note">总共 <%= categories.length %> 个项目。重命名会同步更新所有玩家条目。</p>
+    </div>
+  </div>
+
+  <% if (categories.length === 0) { %>
+    <div class="admin-empty-state">还没有任何细分项目</div>
+  <% } else { %>
+    <div class="cat-list">
+      <% categories.forEach((name) => { %>
+        <article class="cat-row">
+          <div>
+            <strong><%= name %></strong>
+          </div>
+          <form method="post" action="/admin/categories/rename">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <input type="hidden" name="from" value="<%= name %>" />
+            <input name="to" type="text" maxlength="48" pattern="[A-Za-z0-9 _\-]+" placeholder="新名称" required />
+            <button type="submit" class="tiny">重命名</button>
+          </form>
+          <form method="post" action="/admin/categories/delete" data-confirm="删除将清除所有玩家中的该项目数据，确定继续？">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <input type="hidden" name="name" value="<%= name %>" />
+            <button type="submit" class="tiny danger">删除</button>
+          </form>
+        </article>
+      <% }) %>
+    </div>
+  <% } %>
+</section>
+
+<%- include('../partials/footer') %>

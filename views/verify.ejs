@@ -1,0 +1,41 @@
+<%- include('partials/header') %>
+
+<div class="auth-shell">
+  <section class="auth-card">
+    <p class="eyebrow">邮箱验证</p>
+    <h2>输入收到的验证码</h2>
+    <p class="auth-sub">我们刚发送了一封含 6 位验证码的邮件到你的邮箱，5 分钟内有效。最多 5 次输错机会，超过后当前码作废，请点击「重新发送」获取新码。</p>
+
+    <% if (error) { %>
+      <div class="alert"><%= error %></div>
+    <% } %>
+    <% if (success) { %>
+      <div class="alert success-alert"><%= success %></div>
+    <% } %>
+
+    <form method="post" action="/verify" class="auth-form" autocomplete="off">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <label class="field">
+        邮箱
+        <input name="email" type="email" maxlength="128" required value="<%= email %>" readonly style="opacity:0.85;" />
+      </label>
+      <label class="field">
+        验证码（6 位数字）
+        <input name="code" type="text" inputmode="numeric" pattern="\d{6}" maxlength="6" minlength="6" required autofocus style="font-family:ui-monospace,'SF Mono',Consolas,monospace;letter-spacing:0.5em;text-align:center;font-size:1.2rem;" />
+      </label>
+      <button type="submit">验证邮箱</button>
+    </form>
+
+    <form method="post" action="/resend-verification" class="auth-form" style="margin-top: 1rem;">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <input type="hidden" name="email" value="<%= email %>" />
+      <button type="submit" class="ghost">重新发送验证码</button>
+    </form>
+
+    <p class="auth-meta">
+      <a href="/login">返回登录</a>
+    </p>
+  </section>
+</div>
+
+<%- include('partials/footer') %>

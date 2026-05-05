@@ -1,0 +1,38 @@
+<%- include('partials/header') %>
+
+<div class="auth-shell">
+  <section class="auth-card">
+    <p class="eyebrow">注册</p>
+    <h2>创建你的账号</h2>
+    <p class="auth-sub">提交后会向邮箱发送验证邮件，验证完成即可登录。</p>
+
+    <% if (error) { %>
+      <div class="alert"><%= error %></div>
+    <% } %>
+
+    <form method="post" action="/register" class="auth-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <label class="field">
+        用户名
+        <input name="username" type="text" minlength="3" maxlength="32" pattern="[A-Za-z0-9_\-]+" required value="<%= values.username %>" autocomplete="username" />
+      </label>
+      <label class="field">
+        邮箱
+        <input name="email" type="email" maxlength="128" required value="<%= values.email %>" autocomplete="email" />
+      </label>
+      <label class="field">
+        密码（至少 8 位）
+        <input name="password" type="password" minlength="8" maxlength="128" required autocomplete="new-password" />
+      </label>
+      <label class="field">
+        确认密码
+        <input name="passwordConfirm" type="password" minlength="8" maxlength="128" required autocomplete="new-password" />
+      </label>
+      <button type="submit">注册并发送验证邮件</button>
+    </form>
+
+    <p class="auth-meta">已经有账号？<a href="/login">直接登录</a></p>
+  </section>
+</div>
+
+<%- include('partials/footer') %>

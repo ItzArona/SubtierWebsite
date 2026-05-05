@@ -1,7 +1,12 @@
 <%- include('partials/header') %>
-<section class="card">
-  <h2><%= title %></h2>
-  <p><%= message %></p>
-  <a class="link-button" href="/">回到首页</a>
-</section>
+
+<div class="auth-shell">
+  <section class="auth-card" style="text-align: center;">
+    <p class="eyebrow"><%= title %></p>
+    <h2 style="margin-bottom: 0.6rem;"><%= title %></h2>
+    <p class="auth-sub" style="margin-bottom: 1.6rem;"><%= message %></p>
+    <a class="button-link" href="/" style="display: inline-flex;">回到首页</a>
+  </section>
+</div>
+
 <%- include('partials/footer') %>

@@ -5,20 +5,24 @@ const bcrypt = require('bcryptjs');
 const DATA_DIR = path.resolve(__dirname, '../../data');
 const LEADERBOARD_FILE = path.join(DATA_DIR, 'leaderboard.json');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
+const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 
-const DEFAULT_ADMIN = {
-  id: 'admin-1',
-  username: process.env.ADMIN_USERNAME || 'adminstrator',
-  passwordHash: bcrypt.hashSync(process.env.ADMIN_PASSWORD || 'ChangeMe_123s45', 12),
-  role: 'admin',
-  createdAt: new Date().toISOString()
+const SUPER_ADMIN_USERNAME = (process.env.ADMIN_USERNAME || 'admin').trim();
+
+const DEFAULT_SETTINGS = {
+  registrationEnabled: false,
+  oauthEnabled: false,
+  oauthMicrosoft: { clientId: '', tenant: 'common' },
+  migrations: { categoryRenames_v1: false, userSchema_v1: false }
 };
 
 let cachedLeaderboard = null;
 let cachedUsers = null;
+let cachedSettings = null;
 
 let leaderboardPromise = null;
 let usersPromise = null;
+let settingsPromise = null;
 
 let isWriting = false;
 const writeQueue = [];
@@ -26,7 +30,7 @@ const writeQueue = [];
 async function flushWriteQueue() {
   if (isWriting || writeQueue.length === 0) return;
   isWriting = true;
-  
+
   const { filePath, data, resolve, reject } = writeQueue.shift();
   const tempPath = `${filePath}.tmp`;
   try {
@@ -81,35 +85,198 @@ async function saveLeaderboard(entries) {
   cachedLeaderboard = entries;
 }
 
+function buildSuperAdminSeed() {
+  const username = SUPER_ADMIN_USERNAME;
+  const password = process.env.ADMIN_PASSWORD || 'ChangeMe_12345';
+  return {
+    id: 'admin-1',
+    username,
+    email: `${username}@local`,
+    passwordHash: bcrypt.hashSync(password, 12),
+    role: 'SuperAdmin',
+    emailVerified: true,
+    verifyToken: null,
+    verifyExpires: null,
+    oauthProvider: null,
+    oauthSubject: null,
+    passwordResetToken: null,
+    passwordResetExpires: null,
+    verifyAttempts: 0,
+    resetAttempts: 0,
+    mailCooldown: {},
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+}
+
+function migrateUserShape(user) {
+  const next = { ...user };
+  let changed = false;
+  if (next.role === 'admin' || next.username === SUPER_ADMIN_USERNAME) {
+    if (next.role !== 'SuperAdmin') { next.role = 'SuperAdmin'; changed = true; }
+  }
+  if (!['SuperAdmin', 'Admin', 'User'].includes(next.role)) {
+    next.role = 'User';
+    changed = true;
+  }
+  if (typeof next.email !== 'string' || next.email.length === 0) {
+    next.email = `${next.username}@local`;
+    changed = true;
+  }
+  if (typeof next.emailVerified !== 'boolean') {
+    next.emailVerified = next.role === 'SuperAdmin';
+    changed = true;
+  }
+  for (const key of ['verifyToken', 'verifyExpires', 'oauthProvider', 'oauthSubject', 'passwordResetToken', 'passwordResetExpires', 'verifyAttempts', 'resetAttempts']) {
+    if (!(key in next)) {
+      next[key] = (key === 'verifyAttempts' || key === 'resetAttempts') ? 0 : null;
+      changed = true;
+    }
+  }
+  if (!next.mailCooldown || typeof next.mailCooldown !== 'object') {
+    next.mailCooldown = {};
+    changed = true;
+  }
+  if (!next.updatedAt) { next.updatedAt = next.createdAt || new Date().toISOString(); changed = true; }
+  return { user: next, changed };
+}
+
 async function getUsers() {
   if (cachedUsers) return cachedUsers;
   if (!usersPromise) {
     usersPromise = (async () => {
-      const users = await readJson(USERS_FILE, []);
-      if (users.length > 0) {
-        cachedUsers = users;
-        usersPromise = null;
-        return users;
+      const raw = await readJson(USERS_FILE, []);
+      let users = raw;
+      let needsWrite = false;
+
+      if (users.length === 0) {
+        users = [buildSuperAdminSeed()];
+        needsWrite = true;
+      } else {
+        const migrated = users.map(migrateUserShape);
+        if (migrated.some((m) => m.changed)) needsWrite = true;
+        users = migrated.map((m) => m.user);
+        const hasSuper = users.some((u) => u.role === 'SuperAdmin');
+        if (!hasSuper) {
+          const target = users.find((u) => u.username === SUPER_ADMIN_USERNAME);
+          if (target) {
+            target.role = 'SuperAdmin';
+            target.emailVerified = true;
+            needsWrite = true;
+          } else {
+            users.push(buildSuperAdminSeed());
+            needsWrite = true;
+          }
+        }
       }
 
-      await writeJson(USERS_FILE, [DEFAULT_ADMIN]);
-      cachedUsers = [DEFAULT_ADMIN];
+      if (needsWrite) await writeJson(USERS_FILE, users);
+      cachedUsers = users;
       usersPromise = null;
-      return cachedUsers;
+      return users;
     })();
   }
   return usersPromise;
 }
 
-async function findUserByUsername(username) {
-  const users = await getUsers();
-  return users.find((user) => user.username === username) || null;
+async function saveUsers(users) {
+  await writeJson(USERS_FILE, users);
+  cachedUsers = users;
 }
 
-// Invalidate cache (used by excelImport or external modifications)
+async function findUserByUsername(username) {
+  const users = await getUsers();
+  const lc = String(username || '').trim().toLowerCase();
+  return users.find((u) => u.username.toLowerCase() === lc) || null;
+}
+
+async function findUserByEmail(email) {
+  const users = await getUsers();
+  const lc = String(email || '').trim().toLowerCase();
+  return users.find((u) => (u.email || '').toLowerCase() === lc) || null;
+}
+
+async function findUserById(id) {
+  const users = await getUsers();
+  return users.find((u) => u.id === id) || null;
+}
+
+async function findUserByVerifyToken(token) {
+  const users = await getUsers();
+  if (!token) return null;
+  return users.find((u) => u.verifyToken === token) || null;
+}
+
+async function findUserByPasswordResetToken(token) {
+  const users = await getUsers();
+  if (!token) return null;
+  return users.find((u) => u.passwordResetToken === token) || null;
+}
+
+async function findUserByOauth(provider, subject) {
+  const users = await getUsers();
+  if (!provider || !subject) return null;
+  return users.find((u) => u.oauthProvider === provider && u.oauthSubject === subject) || null;
+}
+
+async function upsertUser(user) {
+  const users = await getUsers();
+  const idx = users.findIndex((u) => u.id === user.id);
+  const stamped = { ...user, updatedAt: new Date().toISOString() };
+  if (idx === -1) users.push(stamped); else users[idx] = stamped;
+  await saveUsers(users);
+  return stamped;
+}
+
+async function deleteUser(id) {
+  const users = await getUsers();
+  const next = users.filter((u) => u.id !== id);
+  await saveUsers(next);
+}
+
+async function getSettings() {
+  if (cachedSettings) return cachedSettings;
+  if (!settingsPromise) {
+    settingsPromise = (async () => {
+      const raw = await readJson(SETTINGS_FILE, null);
+      const merged = mergeSettings(DEFAULT_SETTINGS, raw || {});
+      if (!raw) await writeJson(SETTINGS_FILE, merged);
+      cachedSettings = merged;
+      settingsPromise = null;
+      return merged;
+    })();
+  }
+  return settingsPromise;
+}
+
+function mergeSettings(base, incoming) {
+  const out = { ...base };
+  for (const key of Object.keys(base)) {
+    if (key in incoming) {
+      const bv = base[key];
+      const iv = incoming[key];
+      if (bv && typeof bv === 'object' && !Array.isArray(bv) && iv && typeof iv === 'object') {
+        out[key] = mergeSettings(bv, iv);
+      } else if (typeof bv === typeof iv || iv === null) {
+        out[key] = iv;
+      }
+    }
+  }
+  return out;
+}
+
+async function saveSettings(next) {
+  const current = await getSettings();
+  const merged = mergeSettings(current, next);
+  await writeJson(SETTINGS_FILE, merged);
+  cachedSettings = merged;
+  return merged;
+}
+
 function invalidateCache() {
   cachedLeaderboard = null;
   cachedUsers = null;
+  cachedSettings = null;
 }
 
 module.exports = {
@@ -117,7 +284,20 @@ module.exports = {
   getLeaderboard,
   saveLeaderboard,
   getUsers,
+  saveUsers,
   findUserByUsername,
+  findUserByEmail,
+  findUserById,
+  findUserByVerifyToken,
+  findUserByPasswordResetToken,
+  findUserByOauth,
+  upsertUser,
+  deleteUser,
+  getSettings,
+  saveSettings,
   invalidateCache,
-  LEADERBOARD_FILE
+  LEADERBOARD_FILE,
+  USERS_FILE,
+  SETTINGS_FILE,
+  SUPER_ADMIN_USERNAME
 };

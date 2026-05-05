@@ -1,16 +1,16 @@
 <%- include('partials/header') %>
 
-<section class="hero card hero-card">
+<section class="hero-card card">
   <div class="hero-copy">
     <p class="eyebrow">快速查榜</p>
     <h2>榜单总览</h2>
-    <p class="hero-text">此榜为娱乐性质，数据来源于Pico's Subtier</p>
+    <p class="hero-text">1.9+ PvP Subtier 榜单。点击表头排序，按下 <kbd style="font-family:ui-monospace,monospace;background:rgba(148,163,184,0.18);padding:0 0.35rem;border-radius:6px;border:1px solid var(--border);font-size:0.78rem;">Ctrl + K</kbd> 直接搜索。</p>
   </div>
 
   <div class="hero-actions">
     <label class="search-wrap" for="searchInput">
       <span>搜索玩家</span>
-      <input id="searchInput" type="search" placeholder="输入名字快速过滤" autocomplete="off" />
+      <input id="searchInput" type="search" placeholder="输入名字或段位过滤" autocomplete="off" />
     </label>
 
     <div class="hero-stats">
@@ -20,13 +20,26 @@
       </div>
       <div class="stat-card">
         <strong><%= stats.totalCategories %></strong>
-        <span>个细项</span>
+        <span>个细分项目</span>
       </div>
     </div>
   </div>
 </section>
 
 <section class="card">
+  <div class="mobile-sort">
+    <label class="mobile-sort-field">
+      <span>排序</span>
+      <select id="mobileSortSelect">
+        <option value="position">排名</option>
+        <option value="player">玩家</option>
+        <option value="points">积分</option>
+        <option value="rank">段位</option>
+      </select>
+    </label>
+    <button type="button" id="mobileSortDir" class="ghost mobile-sort-dir" data-dir="asc" aria-label="切换升序降序">↑ 升序</button>
+  </div>
+
   <table id="leaderboardTable">
     <thead>
       <tr>
@@ -34,19 +47,28 @@
         <th data-sort="player">玩家</th>
         <th data-sort="rank">段位</th>
         <th data-sort="points">积分</th>
-        <th data-sort="categories">细分项目</th>
+        <th>细分项目</th>
       </tr>
     </thead>
     <tbody>
-      <% 
+      <%
         let maxPoints = 0;
         if (entries && entries.length > 0) {
           maxPoints = Math.max(...entries.map(e => e.points || 0));
         }
       %>
-      <% entries.forEach((entry) => { %>
-      <tr data-player="<%= entry.player.toLowerCase() %>" data-position="<%= entry.position %>" data-rank="<%= entry.rank %>" data-points="<%= entry.points %>" class="leaderboard-row">
-        <td data-label="排名">#<%= entry.position %></td>
+      <% entries.forEach((entry, index) => { %>
+      <tr
+        data-player="<%= entry.player.toLowerCase() %>"
+        data-position="<%= entry.position %>"
+        data-rank="<%= entry.rank %>"
+        data-points="<%= entry.points %>"
+        class="leaderboard-row"
+        style="--row-index: <%= index %>;"
+      >
+        <td data-label="排名">
+          <span class="position-cell">#<%= entry.position %></span>
+        </td>
         <td data-label="玩家">
           <strong class="player-name <%= Number(entry.position) === 1 ? 'rank-1' : Number(entry.position) === 2 ? 'rank-2' : Number(entry.position) === 3 ? 'rank-3' : '' %>">
             <% if (Number(entry.position) === 1) { %><span class="rank-icon">👑</span><% } %>
@@ -54,6 +76,11 @@
             <% if (Number(entry.position) === 3) { %><span class="rank-icon">🥉</span><% } %>
             <%= entry.player %>
           </strong>
+          <% if (entry.testServer) { %>
+            <div style="margin-top: 0.35rem;">
+              <span class="test-server-tag" title="测试服务器"><%= entry.testServer %></span>
+            </div>
+          <% } %>
         </td>
         <td data-label="段位"><span class="badge" data-rank="<%= entry.rank %>"><%= entry.rank %></span></td>
         <td data-label="积分">
@@ -67,7 +94,7 @@
         <td data-label="细分项目">
           <div class="chips">
             <% Object.entries(entry.categories || {}).forEach(([key, val]) => { if (val) { %>
-            <span class="chip"><%= key %>: <%= val %></span>
+              <span class="chip"><span class="chip-key"><%= key %>:</span><%= val %></span>
             <% } }) %>
           </div>
         </td>
@@ -76,8 +103,8 @@
       <tr id="emptyStateRow" class="empty-state-row" hidden>
         <td colspan="5">
           <div class="admin-empty-state">
-            <h3>没有找到该玩家</h3>
-            <p>请尝试搜索其他关键词</p>
+            <h3 style="margin: 0 0 0.4rem;">没有找到该玩家</h3>
+            <p style="margin: 0;">请尝试搜索其他关键词</p>
           </div>
         </td>
       </tr>
@@ -85,5 +112,4 @@
   </table>
 </section>
 
-<script src="/public/main.js"></script>
 <%- include('partials/footer') %>

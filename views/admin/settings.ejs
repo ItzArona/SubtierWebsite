@@ -1,0 +1,77 @@
+<%- include('../partials/header') %>
+
+<%
+  const errMap = {
+    invalid: '提交内容无效，请刷新后重试',
+    saved: null
+  };
+  const okMap = { saved: '设置已保存' };
+%>
+
+<% if (flashError) { %>
+  <div class="alert"><%= errMap[flashError] || flashError %></div>
+<% } %>
+<% if (flashSuccess && okMap[flashSuccess]) { %>
+  <div class="alert success-alert"><%= okMap[flashSuccess] %></div>
+<% } %>
+
+<section class="card">
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">站点设置</p>
+      <h2>访问与登录</h2>
+      <p class="section-note">仅 SuperAdmin 可见。Microsoft client_secret 必须由 .env 提供。</p>
+    </div>
+  </div>
+
+  <form method="post" action="/admin/settings" class="settings-grid">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+    <div class="settings-row">
+      <div>
+        <h3>开放注册</h3>
+        <p>关闭时 <code>/register</code> 路由 404，注册按钮也会从顶部导航中隐去。</p>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" name="registrationEnabled" <%= settings.registrationEnabled ? 'checked' : '' %> />
+        <span>允许用户自助注册</span>
+      </label>
+    </div>
+
+    <div class="settings-row">
+      <div>
+        <h3>Microsoft OAuth</h3>
+        <p>开启后登录页会出现 "使用 Microsoft 账号登录" 按钮。需要在 Azure Portal 创建应用并填写 client_id；client_secret 仅从 <code>.env</code> 中读取。</p>
+        <p style="margin-top: 0.4rem;">
+          当前状态：
+          <% if (microsoftReady) { %>
+            <span class="role-pill role-superadmin" style="background:rgba(74,219,161,0.18); color:#b1f2d8; border-color:rgba(74,219,161,0.4);">已就绪</span>
+          <% } else { %>
+            <span class="role-pill" style="background:rgba(255,200,115,0.14); color:#ffc873; border:1px solid rgba(255,200,115,0.4);">未就绪</span>
+            <span class="toggle-meta">缺少 client_id 或 .env 中的 MS_OAUTH_CLIENT_SECRET</span>
+          <% } %>
+        </p>
+      </div>
+      <div style="display: grid; gap: 0.6rem;">
+        <label class="toggle">
+          <input type="checkbox" name="oauthEnabled" <%= settings.oauthEnabled ? 'checked' : '' %> />
+          <span>开启 Microsoft 登录</span>
+        </label>
+        <label class="field">
+          Client ID
+          <input name="oauthClientId" type="text" maxlength="256" value="<%= settings.oauthMicrosoft && settings.oauthMicrosoft.clientId || '' %>" placeholder="Azure 应用的 application (client) ID" />
+        </label>
+        <label class="field">
+          Tenant
+          <input name="oauthTenant" type="text" maxlength="64" value="<%= settings.oauthMicrosoft && settings.oauthMicrosoft.tenant || 'common' %>" placeholder="common / organizations / 具体租户 ID" />
+        </label>
+      </div>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end;">
+      <button type="submit" style="width: auto; min-width: 160px;">保存设置</button>
+    </div>
+  </form>
+</section>
+
+<%- include('../partials/footer') %>

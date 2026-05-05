@@ -1,0 +1,45 @@
+<%- include('partials/header') %>
+
+<div class="auth-shell">
+  <section class="auth-card">
+    <p class="eyebrow">登录</p>
+    <h2>欢迎回来</h2>
+    <p class="auth-sub">使用账号或邮箱登录。管理员请使用初始凭据。</p>
+
+    <% if (error) { %>
+      <div class="alert"><%= error %></div>
+    <% } %>
+
+    <form id="loginForm" method="post" action="/login" class="auth-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <label class="field">
+        用户名或邮箱
+        <input name="identifier" type="text" autocomplete="username" value="<%= identifier %>" required />
+      </label>
+      <label class="field">
+        密码
+        <input name="password" type="password" autocomplete="current-password" required />
+      </label>
+      <button id="loginSubmit" type="submit">进入</button>
+    </form>
+
+    <% if (publicSettings && publicSettings.oauthEnabled && publicSettings.microsoftReady) { %>
+      <div class="auth-divider">或者</div>
+      <a class="oauth-btn" href="/auth/microsoft">
+        <span class="ms-tile" aria-hidden="true"></span>
+        使用 Microsoft 账号登录
+      </a>
+    <% } %>
+
+    <p class="auth-meta" style="display: grid; gap: 0.4rem;">
+      <span><a href="/forgot">忘记密码？</a></span>
+      <% if (publicSettings && publicSettings.registrationEnabled) { %>
+        <span>没有账号？<a href="/register">立即注册</a></span>
+      <% } else { %>
+        <span>当前未开放注册，请联系管理员获取账号</span>
+      <% } %>
+    </p>
+  </section>
+</div>
+
+<%- include('partials/footer') %>

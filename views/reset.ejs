@@ -1,0 +1,43 @@
+<%- include('partials/header') %>
+
+<div class="auth-shell">
+  <section class="auth-card">
+    <p class="eyebrow">重置密码</p>
+    <h2>输入验证码并设置新密码</h2>
+    <p class="auth-sub">请查收邮件里的 6 位验证码。验证码 5 分钟内有效；输错 5 次会作废当前码，需要回到「忘记密码」重新发送。</p>
+
+    <% if (error) { %>
+      <div class="alert"><%= error %></div>
+    <% } %>
+    <% if (success) { %>
+      <div class="alert success-alert"><%= success %></div>
+    <% } %>
+
+    <form method="post" action="/reset" class="auth-form" autocomplete="off">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <label class="field">
+        邮箱
+        <input name="email" type="email" maxlength="128" required value="<%= email %>" readonly style="opacity:0.85;" />
+      </label>
+      <label class="field">
+        验证码（6 位数字）
+        <input name="code" type="text" inputmode="numeric" pattern="\d{6}" maxlength="6" minlength="6" required autofocus style="font-family:ui-monospace,'SF Mono',Consolas,monospace;letter-spacing:0.5em;text-align:center;font-size:1.2rem;" />
+      </label>
+      <label class="field">
+        新密码（至少 8 位）
+        <input name="password" type="password" minlength="8" maxlength="128" required autocomplete="new-password" />
+      </label>
+      <label class="field">
+        确认新密码
+        <input name="passwordConfirm" type="password" minlength="8" maxlength="128" required autocomplete="new-password" />
+      </label>
+      <button type="submit">提交</button>
+    </form>
+
+    <p class="auth-meta">
+      没收到验证码？<a href="/forgot">回到忘记密码</a>
+    </p>
+  </section>
+</div>
+
+<%- include('partials/footer') %>

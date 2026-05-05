@@ -1,0 +1,28 @@
+<%- include('partials/header') %>
+
+<div class="auth-shell">
+  <section class="auth-card">
+    <p class="eyebrow">忘记密码</p>
+    <h2>找回你的账号</h2>
+    <p class="auth-sub">输入注册时使用的邮箱，我们会发送一封 5 分钟内有效的验证码。提交后会跳到设新密码页面。同邮箱每 30 秒只能发一次。</p>
+
+    <% if (error) { %>
+      <div class="alert"><%= error %></div>
+    <% } %>
+
+    <form method="post" action="/forgot" class="auth-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <label class="field">
+        邮箱
+        <input name="email" type="email" maxlength="128" required value="<%= email %>" autocomplete="email" />
+      </label>
+      <button type="submit">发送验证码</button>
+    </form>
+
+    <p class="auth-meta">
+      想起密码了？<a href="/login">返回登录</a>
+    </p>
+  </section>
+</div>
+
+<%- include('partials/footer') %>
