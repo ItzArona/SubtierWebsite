@@ -32,7 +32,10 @@ async function importExcelIfNeeded() {
   try {
     await fs.access(SOURCE_EXCEL);
   } catch (error) {
-    return;
+    if (error && error.code === 'ENOENT') {
+      return;
+    }
+    throw error;
   }
 
   const workbook = new ExcelJS.Workbook();
