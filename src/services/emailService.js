@@ -1,3 +1,5 @@
+const crypto = require('node:crypto');
+
 const RESEND_ENDPOINT = 'https://api.resend.com/emails';
 
 const VERIFY_TTL_MS = 5 * 60 * 1000;
@@ -15,7 +17,7 @@ function escapeHtml(value) {
 }
 
 function generateCode() {
-  const n = Math.floor(Math.random() * 1_000_000);
+  const n = crypto.randomInt(0, 1_000_000);
   return String(n).padStart(6, '0');
 }
 

@@ -166,5 +166,5 @@ The current CSP forbids inline scripts. The new `login.ejs` (replaces existing) 
 - The hard-coded fallback `DEFAULT_ADMIN.username = 'adminstrator'` in source is replaced. The actual on-disk admin row stays as `username: 'admin'` (verified in `data/users.json`).
 - Resend's free tier may rate-limit; we don't currently queue retries.
 - Microsoft OAuth requires real client id / secret to fully work; without them the toggle becomes a no-op.
-- Sessions are stored in memory (`express-session` default `MemoryStore`). Restart logs everyone out. Acceptable for a small community site, called out for the record.
+- Sessions are stored on disk via `FileSessionStore` in `data/sessions.json`. Restart keeps sessions; deleting the file logs everyone out.
 - The shared Resend API key was pasted in the conversation — it lives in `.env` (gitignored) but the user should rotate it.

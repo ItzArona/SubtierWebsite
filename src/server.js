@@ -170,6 +170,25 @@ function publicUser(user) {
   return { id: user.id, username: user.username, email: user.email, role: user.role };
 }
 
+function normalizeMicrosoftUsername(displayName, subject) {
+  const raw = String(displayName || '').trim();
+  const cleaned = raw.replace(/\s+/g, '_').replace(/[^A-Za-z0-9_-]/g, '_');
+  const trimmed = cleaned.replace(/^_+|_+$/g, '');
+  const fallback = `ms_${String(subject || 'user').slice(0, 8)}`;
+  const base = trimmed.length >= 3 ? trimmed : fallback;
+  return base.slice(0, 32);
+}
+
+async function ensureUniqueUsername(base) {
+  if (!(await findUserByUsername(base))) return base;
+  for (let i = 1; ; i += 1) {
+    const suffix = `_${i}`;
+    const trimmed = base.slice(0, 32 - suffix.length);
+    const candidate = `${trimmed}${suffix}`;
+    if (!(await findUserByUsername(candidate))) return candidate;
+  }
+}
+
 function summariseEntries(entries) {
   const sorted = [...entries].sort((a, b) => a.position - b.position);
   const categories = Array.from(new Set(entries.flatMap((e) => Object.keys(e.categories || {})))).sort((a, b) => a.localeCompare(b));
@@ -379,8 +398,7 @@ app.post('/resend-verification', mailIpLimiter, async (req, res) => {
       console.error('重发验证邮件失败:', error.message);
       return res.status(502).render('verify', { title: '邮箱验证', error: '邮件发送失败，请稍后重试', success: null, email });
     }
-    await upsertUser({ ...user, verifyToken: code, verifyExpires, verifyAttempts: 0 });
-    await stampMailSent(user, 'verify');
+    await stampMailSent({ ...user, verifyToken: code, verifyExpires, verifyAttempts: 0 }, 'verify');
   }
 
   res.render('verify', { title: '邮箱验证', error: null, success: successText, email });
@@ -417,13 +435,12 @@ app.post('/forgot', mailIpLimiter, async (req, res) => {
       console.error('发送重置邮件失败:', error.message);
       return res.status(502).render('forgot', { title: '忘记密码', error: '邮件发送失败，请稍后重试', success: null, email });
     }
-    await upsertUser({
+    await stampMailSent({
       ...user,
       passwordResetToken: code,
       passwordResetExpires: new Date(Date.now() + RESET_TTL_MS).toISOString(),
       resetAttempts: 0
-    });
-    await stampMailSent(user, 'reset');
+    }, 'reset');
   }
 
   // Always redirect to /reset so the user has the form ready, regardless of whether the email exists.
@@ -513,11 +530,21 @@ app.get('/auth/microsoft/callback', async (req, res, next) => {
     }
 
     let user = await findUserByOauth('microsoft', profile.subject);
-    if (!user) user = await findUserByEmail(profile.email);
     if (!user) {
+      user = await findUserByEmail(profile.email);
+      if (user && user.oauthSubject && user.oauthSubject !== profile.subject) {
+        return res.status(403).render('error', {
+          title: '账号已绑定',
+          message: '该邮箱已绑定其他 Microsoft 账号，请使用已绑定的账号登录'
+        });
+      }
+    }
+    if (!user) {
+      const baseUsername = normalizeMicrosoftUsername(profile.displayName, profile.subject);
+      const username = await ensureUniqueUsername(baseUsername);
       user = await upsertUser({
         id: `user-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`,
-        username: profile.displayName.replace(/\s+/g, '_').slice(0, 32) || `ms_${profile.subject.slice(0, 8)}`,
+        username,
         email: profile.email,
         passwordHash: null,
         role: 'User',
