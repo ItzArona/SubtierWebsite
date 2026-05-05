@@ -1,4 +1,4 @@
-const fs = require('node:fs');
+const fs = require('node:fs/promises');
 const path = require('node:path');
 const ExcelJS = require('exceljs');
 const { getLeaderboard, saveLeaderboard } = require('./dataStore');
@@ -25,7 +25,13 @@ function toNumber(value) {
 
 async function importExcelIfNeeded() {
   const existing = await getLeaderboard();
-  if (existing.length > 0 || !fs.existsSync(SOURCE_EXCEL)) {
+  if (existing.length > 0) {
+    return;
+  }
+
+  try {
+    await fs.access(SOURCE_EXCEL);
+  } catch (error) {
     return;
   }
 
