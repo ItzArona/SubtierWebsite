@@ -27,12 +27,11 @@
       <p class="eyebrow">新增</p>
       <h2>添加新条目</h2>
     </div>
-    <p class="section-note">填写排名、玩家、段位、积分（细分项目可留空）</p>
+    <p class="section-note">填写玩家、段位、积分（细分项目可留空）。排名根据积分自动计算，同分并列。</p>
   </div>
 
   <form method="post" action="/admin/entries" class="form-grid">
     <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-    <label class="field">排名 <input name="position" type="number" min="1" max="9999" required /></label>
     <label class="field">玩家 <input name="player" type="text" maxlength="32" required /></label>
     <label class="field">段位 <input name="rank" type="text" maxlength="64" required /></label>
     <label class="field">积分 <input name="points" type="number" min="0" max="9999" required /></label>
@@ -97,7 +96,6 @@
           <form method="post" action="/admin/entries/<%= entry.id %>/update" class="entry-update-form">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
             <div class="entry-editor">
-              <label class="field">排名 <input name="position" type="number" min="1" max="9999" value="<%= entry.position %>" required /></label>
               <label class="field">玩家 <input name="player" type="text" maxlength="32" value="<%= entry.player %>" required /></label>
               <label class="field">段位 <input name="rank" type="text" maxlength="64" value="<%= entry.rank %>" required /></label>
               <label class="field">积分 <input name="points" type="number" min="0" max="9999" value="<%= entry.points %>" required /></label>
