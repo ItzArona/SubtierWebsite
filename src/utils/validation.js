@@ -1,7 +1,6 @@
 const { z } = require('zod');
 
 const leaderboardSchema = z.object({
-  position: z.coerce.number().int().min(1).max(9999),
   player: z.string().trim().min(1).max(32),
   rank: z.string().trim().min(1).max(64),
   points: z.coerce.number().int().min(0).max(9999),

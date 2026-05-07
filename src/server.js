@@ -751,7 +751,6 @@ app.post('/admin/entries', requireAdminOrAbove, async (req, res) => {
   const entries = await getLeaderboard();
   entries.push({
     id: `entry-${Date.now()}`,
-    position: parsed.data.position,
     player: parsed.data.player,
     rank: parsed.data.rank,
     points: parsed.data.points,
@@ -775,7 +774,6 @@ app.post('/admin/entries/:id/update', requireAdminOrAbove, async (req, res) => {
   if (idx === -1) return res.status(404).redirect('/admin?error=not_found');
   entries[idx] = {
     ...entries[idx],
-    position: parsed.data.position,
     player: parsed.data.player,
     rank: parsed.data.rank,
     points: parsed.data.points,
@@ -1001,10 +999,40 @@ async function bootstrap() {
   await importExcelIfNeeded();
   await ensureRequiredRenames();
 
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     console.log(`SubtierWebsite started on http://localhost:${PORT}`);
   });
+
+  // Cloudflare Tunnel 默认连接池 idle ~90s；Node 默认 keepAliveTimeout 5s 会让 cloudflared
+  // 复用一条 Node 已半关的连接 → ECONNRESET → 502。两值都必须 > 上游 idle，且 headersTimeout > keepAliveTimeout。
+  server.keepAliveTimeout = 120_000;
+  server.headersTimeout = 125_000;
+
+  function shutdown(signal) {
+    console.log(`收到 ${signal}，开始优雅关闭`);
+    server.close((err) => {
+      if (err) {
+        console.error('关闭 HTTP 服务出错:', err);
+        process.exit(1);
+      }
+      process.exit(0);
+    });
+    setTimeout(() => {
+      console.warn('优雅关闭超时，强制退出');
+      process.exit(1);
+    }, 5_000).unref();
+  }
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
 }
+
+process.on('uncaughtException', (err) => {
+  console.error('uncaughtException:', err);
+  process.exit(1);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('unhandledRejection:', reason);
+});
 
 bootstrap().catch((error) => {
   console.error('应用启动失败:', error);
