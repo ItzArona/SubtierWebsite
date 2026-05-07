@@ -1,3 +1,4 @@
+const fs = require('node:fs/promises');
 const path = require('node:path');
 const ExcelJS = require('exceljs');
 const { getLeaderboard, saveLeaderboard } = require('./dataStore');
@@ -26,6 +27,15 @@ async function importExcelIfNeeded() {
   const existing = await getLeaderboard();
   if (existing.length > 0) {
     return;
+  }
+
+  try {
+    await fs.access(SOURCE_EXCEL);
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      return;
+    }
+    throw error;
   }
 
   const workbook = new ExcelJS.Workbook();

@@ -24,7 +24,7 @@ Single Express 5 app rendering EJS server-side, backed by three JSON files in `d
 1. `ensureDataDir()` — creates `data/`.
 2. `getSettings()` — reads or creates `data/settings.json`.
 3. `getUsers()` — reads `data/users.json`; **idempotently migrates legacy rows** (role `'admin'` → `'SuperAdmin'`, fills missing `email`/`emailVerified`/`passwordResetToken`/`passwordResetExpires`/`mailCooldown`/etc.) and writes back if changed. Also seeds the bootstrap admin from `ADMIN_USERNAME`/`ADMIN_PASSWORD` env vars when the file is empty.
-4. `importExcelIfNeeded()` — bootstrap-imports `1.9+Subtier Overall(1).xlsx` only when leaderboard is empty.
+4. `importExcelIfNeeded()` — when the leaderboard is empty, it bootstrap-imports `1.9+Subtier Overall(1).xlsx` if the file exists.
 5. `ensureRequiredRenames()` — applies the one-time category renames (`Trident → Trident Box`, `Bed → Surface Mace`, `Manhunt → Shieldless UHC`) and flips `settings.migrations.categoryRenames_v1`. Skipped on subsequent boots.
 6. `app.listen(PORT)`.
 
