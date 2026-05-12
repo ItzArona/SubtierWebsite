@@ -1,7 +1,7 @@
 const express = require('express');
 const { getLeaderboard } = require('../services/dataStore');
 const { listCategories } = require('../services/categoryService');
-const { apiListPaginationSchema, apiTierPaginationSchema, apiGamemodeNameSchema } = require('../utils/validation');
+const { apiListPaginationSchema, apiTierPaginationSchema, apiGamemodeNameSchema, apiPlayerNameSchema } = require('../utils/validation');
 
 const router = express.Router();
 
@@ -111,6 +111,33 @@ router.get('/rankings/:gamemode', async (req, res, next) => {
       count,
       offset,
       tiers
+    });
+  } catch (err) { next(err); }
+});
+
+router.get('/players/:name', async (req, res, next) => {
+  try {
+    const nameParse = apiPlayerNameSchema.safeParse(req.params.name);
+    if (!nameParse.success) {
+      return res.status(400).json({ error: 'invalid_query', message: nameParse.error.issues[0].message });
+    }
+    const wanted = nameParse.data.toLowerCase();
+
+    const [entries, allGamemodes] = await Promise.all([getLeaderboard(), listCategories()]);
+    const entry = entries.find((e) => String(e.player || '').toLowerCase() === wanted);
+    if (!entry) {
+      return res.status(404).json({ error: 'not_found', message: `player '${nameParse.data}' not found` });
+    }
+
+    const categories = {};
+    for (const gm of allGamemodes) {
+      const raw = entry.categories && entry.categories[gm];
+      categories[gm] = raw == null ? null : String(raw);
+    }
+
+    sendCached(res, {
+      ...compactPlayer(entry),
+      categories
     });
   } catch (err) { next(err); }
 });
