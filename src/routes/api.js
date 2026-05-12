@@ -132,7 +132,23 @@ router.get('/players/:name', async (req, res, next) => {
     const categories = {};
     for (const gm of allGamemodes) {
       const raw = entry.categories && entry.categories[gm];
-      categories[gm] = raw == null ? null : String(raw);
+      if (raw == null) {
+        categories[gm] = null;
+        continue;
+      }
+
+      const parsedTier = parseTier(raw);
+      if (!parsedTier) {
+        console.warn('[api] invalid tier value for player category', {
+          player: entry.player,
+          gamemode: gm,
+          value: raw
+        });
+        categories[gm] = null;
+        continue;
+      }
+
+      categories[gm] = parsedTier.canonical;
     }
 
     sendCached(res, {
