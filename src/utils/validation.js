@@ -78,6 +78,19 @@ function parseCategoryPayload(body) {
   return categories;
 }
 
+const apiListPaginationSchema = z.object({
+  limit: z.coerce.number().int().min(1).max(200).default(50),
+  offset: z.coerce.number().int().min(0).default(0)
+});
+
+const apiTierPaginationSchema = z.object({
+  count: z.coerce.number().int().min(1).max(50).default(10),
+  offset: z.coerce.number().int().min(0).default(0)
+});
+
+const apiGamemodeNameSchema = z.string().trim().min(1).max(64);
+const apiPlayerNameSchema = z.string().trim().min(1).max(64);
+
 module.exports = {
   leaderboardSchema,
   quickEditSchema,
@@ -92,5 +105,9 @@ module.exports = {
   categoryAddSchema,
   categoryRenameSchema,
   categoryDeleteSchema,
-  parseCategoryPayload
+  parseCategoryPayload,
+  apiListPaginationSchema,
+  apiTierPaginationSchema,
+  apiGamemodeNameSchema,
+  apiPlayerNameSchema
 };
