@@ -1,7 +1,7 @@
 const express = require('express');
 const { getLeaderboard } = require('../services/dataStore');
 const { listCategories } = require('../services/categoryService');
-const { apiListPaginationSchema } = require('../utils/validation');
+const { apiListPaginationSchema, apiTierPaginationSchema, apiGamemodeNameSchema } = require('../utils/validation');
 
 const router = express.Router();
 
@@ -22,6 +22,17 @@ function compactPlayer(entry) {
     rank: entry.rank,
     position: entry.position
   };
+}
+
+const TIER_RE = /^(HT|LT)([1-5])$/i;
+
+function parseTier(raw) {
+  if (typeof raw !== 'string') return null;
+  const m = TIER_RE.exec(raw.trim());
+  if (!m) return null;
+  const half = m[1].toUpperCase();
+  const major = Number(m[2]);
+  return { canonical: `${half}${major}`, half, major };
 }
 
 router.get('/gamemodes', async (req, res, next) => {
@@ -46,6 +57,60 @@ router.get('/rankings', async (req, res, next) => {
       limit,
       offset,
       players
+    });
+  } catch (err) { next(err); }
+});
+
+router.get('/rankings/:gamemode', async (req, res, next) => {
+  try {
+    const nameParse = apiGamemodeNameSchema.safeParse(req.params.gamemode);
+    const queryParse = apiTierPaginationSchema.safeParse(req.query);
+    if (!nameParse.success || !queryParse.success) {
+      const msg = !nameParse.success ? nameParse.error.issues[0].message : queryParse.error.issues[0].message;
+      return res.status(400).json({ error: 'invalid_query', message: msg });
+    }
+    const { count, offset } = queryParse.data;
+
+    const allGamemodes = await listCategories();
+    const requested = nameParse.data.toLowerCase();
+    const canonicalName = allGamemodes.find((g) => g.toLowerCase() === requested);
+    if (!canonicalName) {
+      return res.status(404).json({ error: 'gamemode_not_found', message: `gamemode '${nameParse.data}' does not exist` });
+    }
+
+    const entries = await getLeaderboard();
+    const buckets = { '1': [], '2': [], '3': [], '4': [], '5': [] };
+
+    for (const entry of entries) {
+      const raw = entry.categories && entry.categories[canonicalName];
+      if (raw == null) continue;
+      const tier = parseTier(raw);
+      if (!tier) {
+        console.warn(`[api] unparseable tier "${raw}" on player "${entry.player}" in gamemode "${canonicalName}"`);
+        continue;
+      }
+      buckets[String(tier.major)].push({
+        ...compactPlayer(entry),
+        tier: tier.canonical,
+        _half: tier.half
+      });
+    }
+
+    const tiers = {};
+    for (const k of Object.keys(buckets)) {
+      const sorted = buckets[k].sort((a, b) => {
+        if (a._half !== b._half) return a._half === 'HT' ? -1 : 1;
+        if (b.points !== a.points) return b.points - a.points;
+        return String(a.name).localeCompare(String(b.name));
+      });
+      tiers[k] = sorted.slice(offset, offset + count).map(({ _half, ...rest }) => rest);
+    }
+
+    sendCached(res, {
+      gamemode: canonicalName,
+      count,
+      offset,
+      tiers
     });
   } catch (err) { next(err); }
 });
