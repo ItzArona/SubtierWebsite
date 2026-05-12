@@ -216,6 +216,13 @@ app.get('/', async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
+app.get('/api/docs', (req, res) => {
+  const proto = req.protocol;
+  const host = req.get('host');
+  const baseUrl = `${proto}://${host}`;
+  res.render('api-docs', { title: 'API 文档', baseUrl });
+});
+
 // ---------- Auth: login ----------
 
 app.get('/admin/login', (req, res) => res.redirect('/login'));
