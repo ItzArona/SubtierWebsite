@@ -195,6 +195,25 @@ function publicUser(user) {
   return { id: user.id, username: user.username, email: user.email, role: user.role };
 }
 
+function normalizeMicrosoftUsername(displayName, subject) {
+  const raw = String(displayName || '').trim();
+  const cleaned = raw.replace(/\s+/g, '_').replace(/[^A-Za-z0-9_-]/g, '_');
+  const trimmed = cleaned.replace(/^_+|_+$/g, '');
+  const fallback = `ms_${String(subject || 'user').slice(0, 8)}`;
+  const base = trimmed.length >= 3 ? trimmed : fallback;
+  return base.slice(0, 32);
+}
+
+async function ensureUniqueUsername(base) {
+  if (!(await findUserByUsername(base))) return base;
+  for (let i = 1; ; i += 1) {
+    const suffix = `_${i}`;
+    const trimmed = base.slice(0, 32 - suffix.length);
+    const candidate = `${trimmed}${suffix}`;
+    if (!(await findUserByUsername(candidate))) return candidate;
+  }
+}
+
 function summariseEntries(entries) {
   const sorted = [...entries].sort((a, b) => a.position - b.position);
   const categories = Array.from(new Set(entries.flatMap((e) => Object.keys(e.categories || {})))).sort((a, b) => a.localeCompare(b));
@@ -411,8 +430,7 @@ app.post('/resend-verification', mailIpLimiter, async (req, res) => {
       console.error('重发验证邮件失败:', error.message);
       return res.status(502).render('verify', { title: '邮箱验证', error: '邮件发送失败，请稍后重试', success: null, email });
     }
-    await upsertUser({ ...user, verifyToken: code, verifyExpires, verifyAttempts: 0 });
-    await stampMailSent(user, 'verify');
+    await stampMailSent(user, 'verify', { verifyToken: code, verifyExpires, verifyAttempts: 0 });
   }
 
   res.render('verify', { title: '邮箱验证', error: null, success: successText, email });
@@ -449,13 +467,11 @@ app.post('/forgot', mailIpLimiter, async (req, res) => {
       console.error('发送重置邮件失败:', error.message);
       return res.status(502).render('forgot', { title: '忘记密码', error: '邮件发送失败，请稍后重试', success: null, email });
     }
-    await upsertUser({
-      ...user,
+    await stampMailSent(user, 'reset', {
       passwordResetToken: code,
       passwordResetExpires: new Date(Date.now() + RESET_TTL_MS).toISOString(),
       resetAttempts: 0
     });
-    await stampMailSent(user, 'reset');
   }
 
   // Always redirect to /reset so the user has the form ready, regardless of whether the email exists.
@@ -545,11 +561,21 @@ app.get('/auth/microsoft/callback', async (req, res, next) => {
     }
 
     let user = await findUserByOauth('microsoft', profile.subject);
-    if (!user) user = await findUserByEmail(profile.email);
     if (!user) {
+      user = await findUserByEmail(profile.email);
+      if (user && user.oauthSubject && user.oauthSubject !== profile.subject) {
+        return res.status(403).render('error', {
+          title: '账号已绑定',
+          message: '该邮箱已绑定其他 Microsoft 账号，请使用已绑定的账号登录'
+        });
+      }
+    }
+    if (!user) {
+      const baseUsername = normalizeMicrosoftUsername(profile.displayName, profile.subject);
+      const username = await ensureUniqueUsername(baseUsername);
       user = await upsertUser({
         id: `user-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`,
-        username: profile.displayName.replace(/\s+/g, '_').slice(0, 32) || `ms_${profile.subject.slice(0, 8)}`,
+        username,
         email: profile.email,
         passwordHash: null,
         role: 'User',
@@ -757,7 +783,6 @@ app.post('/admin/entries', requireAdminOrAbove, async (req, res) => {
   const entries = await getLeaderboard();
   entries.push({
     id: `entry-${Date.now()}`,
-    position: parsed.data.position,
     player: parsed.data.player,
     rank: parsed.data.rank,
     points: parsed.data.points,
@@ -781,7 +806,6 @@ app.post('/admin/entries/:id/update', requireAdminOrAbove, async (req, res) => {
   if (idx === -1) return res.status(404).redirect('/admin?error=not_found');
   entries[idx] = {
     ...entries[idx],
-    position: parsed.data.position,
     player: parsed.data.player,
     rank: parsed.data.rank,
     points: parsed.data.points,
@@ -1007,10 +1031,40 @@ async function bootstrap() {
   await importExcelIfNeeded();
   await ensureRequiredRenames();
 
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     console.log(`SubtierWebsite started on http://localhost:${PORT}`);
   });
+
+  // Cloudflare Tunnel 默认连接池 idle ~90s；Node 默认 keepAliveTimeout 5s 会让 cloudflared
+  // 复用一条 Node 已半关的连接 → ECONNRESET → 502。两值都必须 > 上游 idle，且 headersTimeout > keepAliveTimeout。
+  server.keepAliveTimeout = 120_000;
+  server.headersTimeout = 125_000;
+
+  function shutdown(signal) {
+    console.log(`收到 ${signal}，开始优雅关闭`);
+    server.close((err) => {
+      if (err) {
+        console.error('关闭 HTTP 服务出错:', err);
+        process.exit(1);
+      }
+      process.exit(0);
+    });
+    setTimeout(() => {
+      console.warn('优雅关闭超时，强制退出');
+      process.exit(1);
+    }, 5_000).unref();
+  }
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
 }
+
+process.on('uncaughtException', (err) => {
+  console.error('uncaughtException:', err);
+  process.exit(1);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('unhandledRejection:', reason);
+});
 
 bootstrap().catch((error) => {
   console.error('应用启动失败:', error);

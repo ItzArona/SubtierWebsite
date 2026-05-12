@@ -84,8 +84,10 @@ GET  /                          public leaderboard (existing, restyled)
 GET  /login                     unified login page (admin password, user password, OAuth button if enabled)
 POST /login                     password login (rate-limited)
 GET  /register                  registration form (404 when disabled)
-POST /register                  create unverified user, send verify email
-GET  /verify-email?token=...    consume verify token
+POST /register                  create unverified user, send verification code
+GET  /verify                    verification form for emailed code
+POST /verify                    consume verification code
+POST /resend-verification       resend verification code for unverified user
 POST /logout                    end session
 GET  /auth/microsoft            redirect to Microsoft, sets PKCE/state in session
 GET  /auth/microsoft/callback   complete code exchange, link or create user
@@ -164,5 +166,5 @@ The current CSP forbids inline scripts. The new `login.ejs` (replaces existing) 
 - The hard-coded fallback `DEFAULT_ADMIN.username = 'adminstrator'` in source is replaced. The actual on-disk admin row stays as `username: 'admin'` (verified in `data/users.json`).
 - Resend's free tier may rate-limit; we don't currently queue retries.
 - Microsoft OAuth requires real client id / secret to fully work; without them the toggle becomes a no-op.
-- Sessions are stored in memory (`express-session` default `MemoryStore`). Restart logs everyone out. Acceptable for a small community site, called out for the record.
+- Sessions are stored on disk via `FileSessionStore` in `data/sessions.json`. Restart keeps sessions; deleting the file logs everyone out.
 - The shared Resend API key was pasted in the conversation — it lives in `.env` (gitignored) but the user should rotate it.

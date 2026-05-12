@@ -81,8 +81,28 @@ async function getLeaderboard() {
 }
 
 async function saveLeaderboard(entries) {
-  await writeJson(LEADERBOARD_FILE, entries);
-  cachedLeaderboard = entries;
+  const ranked = rankEntries(entries);
+  await writeJson(LEADERBOARD_FILE, ranked);
+  cachedLeaderboard = ranked;
+}
+
+// 按 points 降序排，同分共享 position，下一个 position 跳号（1, 1, 3, 4, 4, 6 ...）
+// 同分时按 player 名做稳定排序，避免每次写入后展示顺序乱跳。
+function rankEntries(entries) {
+  const sorted = [...entries].sort((a, b) => {
+    const diff = Number(b?.points || 0) - Number(a?.points || 0);
+    if (diff !== 0) return diff;
+    return String(a?.player || '').localeCompare(String(b?.player || ''));
+  });
+  for (let i = 0; i < sorted.length; ) {
+    let j = i;
+    while (j < sorted.length && Number(sorted[j].points || 0) === Number(sorted[i].points || 0)) {
+      sorted[j] = { ...sorted[j], position: i + 1 };
+      j += 1;
+    }
+    i = j;
+  }
+  return sorted;
 }
 
 function buildSuperAdminSeed() {
