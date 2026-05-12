@@ -61,9 +61,9 @@ Don't sprinkle inline role checks; reuse the middleware. The 403 path renders `v
 
 `/admin/login` is a 302 to `/login`; the unified `/login` accepts username **or** email plus password. Successful login regenerates the session (anti-fixation) and stashes only `{ id, username, email, role }` (`publicUser`). Never put password hashes or tokens on the session object.
 
-Registration (`POST /register`) is gated by `settings.registrationEnabled`. If disabled, the GET returns 404 and the nav hides the Register link. When enabled, registration creates a `User` row with `emailVerified: false`, generates a 32-byte hex `verifyToken` with **5-minute** expiry (`VERIFY_TTL_MS`), and sends the verification email **before** persisting the row — if the Resend call fails, no user is written. The verify endpoint (`GET /verify-email?token=...`) checks expiry and uses `timingSafeEqualString` for the comparison; on failure it renders `views/verify-result.ejs` with a "重发验证邮件" link rather than a dead-end error page.
+Registration (`POST /register`) is gated by `settings.registrationEnabled`. If disabled, the GET returns 404 and the nav hides the Register link. When enabled, registration creates a `User` row with `emailVerified: false`, generates a **6-digit numeric code** stored in `verifyToken` with **5-minute** expiry (`VERIFY_TTL_MS`) and `verifyAttempts: 0`, and sends the verification email **before** persisting the row — if the Resend call fails, no user is written. The user is then redirected to `/verify?email=...` where they paste the code. The verify endpoint (`POST /verify`) takes `{ email, code }`, uses `timingSafeEqualString` for the comparison, increments `verifyAttempts` on each wrong code, and after `MAX_CODE_ATTEMPTS` (5) failures invalidates the code entirely — the user must then click "重新发送" to issue a fresh one. There is no GET token-link verification flow anymore; `findUserByVerifyToken` / `findUserByPasswordResetToken` in `dataStore` are unused leftover exports.
 
-`POST /resend-verification` re-issues a fresh token + email; `POST /forgot` issues a password-reset email; `GET /reset?token=...` + `POST /reset` consume it. Reset tokens also expire in 5 minutes (`RESET_TTL_MS`). Forgot is a no-op for SuperAdmin (cannot be reset via email — change `ADMIN_PASSWORD` env then reseed via empty `data/users.json` if you really need it).
+`POST /resend-verification` re-issues a fresh 6-digit code (subject to the per-user mail cooldown — see below) and resets `verifyAttempts`. `POST /forgot` issues a password-reset code; the reset page (`GET /reset?email=...`) collects `{ email, code, password, passwordConfirm }` and `POST /reset` consumes them. Reset codes also expire in 5 minutes (`RESET_TTL_MS`) and share the same `MAX_CODE_ATTEMPTS` brute-force lockout via `resetAttempts`. `/forgot` silently no-ops when the email maps to a SuperAdmin or to an OAuth-only account (no `passwordHash`), but **always** 302s to `/reset?email=...` so account existence isn't leaked through the response. To reset a SuperAdmin password, change `ADMIN_PASSWORD` env and wipe `data/users.json` to re-seed.
 
 Login refuses unverified users unless their role is `SuperAdmin` (so the bootstrap admin can always log in even if `emailVerified` somehow isn't set).
 
@@ -112,11 +112,13 @@ Categories are the union of keys present in `entry.categories` across all entrie
 
 Errors are thrown with `error.code` of `CATEGORY_EXISTS` or `CATEGORY_NOT_FOUND`; routes redirect with the code in the query string and the view maps to user-facing strings. Keep this contract when adding new operations.
 
-### CSP and front-end events
+### CSP, CSRF, and front-end events
 
 Helmet's CSP defaults are kept (script-src 'self', script-src-attr 'none'), so **inline event handlers like `onclick`/`onsubmit` are blocked**. Use the `data-confirm="..."` attribute on forms instead — `public/main.js` has a global submit listener that intercepts, runs `window.confirm`, and prevents default if cancelled. There is also a global submit handler that puts the login button into a "登录中…" state when `#loginForm` submits.
 
 Do not relax CSP without a strong reason. If you need a one-off inline script, move it into `public/main.js` instead.
+
+CSRF is enforced globally via `csurf` (npm package itself is deprecated upstream but functional; replace only with a deliberate plan). Every state-changing form **must** include `<input type="hidden" name="_csrf" value="<%= csrfToken %>">`. The token is exposed via `res.locals.csrfToken` by the bootstrap middleware in `server.js`, so EJS templates can use it directly. The global error handler maps `EBADCSRFTOKEN` to a friendly Chinese "安全校验失败" page telling the user to Ctrl+Shift+R — don't let CSRF errors fall through to the generic 500.
 
 ### Validation contract
 
