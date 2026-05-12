@@ -1,0 +1,192 @@
+<%- include('partials/header') %>
+
+<section class="hero-card card">
+  <div class="hero-copy">
+    <p class="eyebrow">External API · Read-only · v1</p>
+    <h2>API 文档</h2>
+    <p class="hero-text">为外部机器人提供只读 JSON 接口。公开访问、跨域允许、按 IP 限流 60 次/分钟。所有响应为 <code class="api-inline">application/json; charset=utf-8</code>。</p>
+  </div>
+</section>
+
+<section class="card">
+  <div class="section-head">
+    <p class="eyebrow">通用说明</p>
+    <h2>Base URL & 通用规则</h2>
+    <p>当前站点的 Base URL：<code class="api-inline"><%= baseUrl %>/api/v1</code></p>
+  </div>
+  <ul class="api-list">
+    <li><strong>限流</strong>：每 IP 每分钟 60 次。超限返回 <code class="api-inline">429</code>，响应头含 <code class="api-inline">Retry-After</code>（秒）。</li>
+    <li><strong>跨域</strong>：开放（<code class="api-inline">Access-Control-Allow-Origin: *</code>），浏览器可直接 fetch。</li>
+    <li><strong>缓存</strong>：成功响应附 <code class="api-inline">Cache-Control: public, max-age=60</code>。</li>
+    <li><strong>错误格式</strong>：统一 JSON 信封 <code class="api-inline">{ "error": "code", "message": "..." }</code>，错误码包括 <code class="api-inline">invalid_query</code> (400)、<code class="api-inline">not_found</code> / <code class="api-inline">gamemode_not_found</code> (404)、<code class="api-inline">rate_limited</code> (429)、<code class="api-inline">internal_error</code> (500)。</li>
+    <li><strong>不返回字段</strong>：<code class="api-inline">testServer</code> 当前是占位列、未整理完毕，所有响应均不返回。</li>
+  </ul>
+</section>
+
+<section class="card">
+  <div class="section-head">
+    <p class="eyebrow">GET /api/v1/gamemodes</p>
+    <h2>① 列出全部 Gamemode</h2>
+    <p>返回站点已知的所有细分项目（gamemode）名称，按字母序排列。</p>
+  </div>
+
+  <h3 class="api-h3">请求示例</h3>
+  <pre class="api-code"><code>curl <%= baseUrl %>/api/v1/gamemodes</code></pre>
+
+  <h3 class="api-h3">响应示例（200）</h3>
+  <pre class="api-code"><code>{
+  "gamemodes": [
+    "Cart",
+    "Creeper",
+    "DiamondSMP",
+    "Elytra",
+    "PIT",
+    "Shieldless UHC",
+    "Spear",
+    "Speed",
+    "Surface Mace",
+    "Trident Box"
+  ]
+}</code></pre>
+</section>
+
+<section class="card">
+  <div class="section-head">
+    <p class="eyebrow">GET /api/v1/rankings</p>
+    <h2>② 总榜</h2>
+    <p>按总榜位次（<code class="api-inline">position</code>）升序返回玩家。</p>
+  </div>
+
+  <h3 class="api-h3">查询参数</h3>
+  <table class="api-table">
+    <thead><tr><th>参数</th><th>类型</th><th>默认</th><th>范围</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><code>limit</code></td><td>integer</td><td><code>50</code></td><td><code>1..200</code></td><td>本次返回的玩家数量</td></tr>
+      <tr><td><code>offset</code></td><td>integer</td><td><code>0</code></td><td><code>&gt;= 0</code></td><td>跳过的玩家数量，用于翻页</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="api-h3">请求示例</h3>
+  <pre class="api-code"><code>curl '<%= baseUrl %>/api/v1/rankings?limit=20&amp;offset=0'</code></pre>
+
+  <h3 class="api-h3">响应示例（200）</h3>
+  <pre class="api-code"><code>{
+  "total": 22,
+  "limit": 20,
+  "offset": 0,
+  "players": [
+    {
+      "name": "SharkIrene",
+      "points": 20,
+      "rank": "SubtierCadet",
+      "position": 1
+    }
+  ]
+}</code></pre>
+</section>
+
+<section class="card">
+  <div class="section-head">
+    <p class="eyebrow">GET /api/v1/rankings/:gamemode</p>
+    <h2>③ 单 Gamemode 按 Tier 排名</h2>
+    <p>把该 gamemode 的玩家按主 tier（1–5）分成 5 个桶返回。桶内 <strong>HT 优先于 LT</strong>，再按 <code class="api-inline">points</code> 降序、玩家名升序。<code class="api-inline">offset</code> 作用在<strong>每个桶内部</strong>，因此单次最多返回 <code class="api-inline">count * 5</code> 个玩家。</p>
+  </div>
+
+  <h3 class="api-h3">路径参数</h3>
+  <table class="api-table">
+    <thead><tr><th>参数</th><th>类型</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><code>gamemode</code></td><td>string</td><td>gamemode 名称，URL 编码即可。<strong>大小写不敏感</strong>，响应中的 <code>gamemode</code> 字段会回填规范大小写。</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="api-h3">查询参数</h3>
+  <table class="api-table">
+    <thead><tr><th>参数</th><th>类型</th><th>默认</th><th>范围</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><code>count</code></td><td>integer</td><td><code>10</code></td><td><code>1..50</code></td><td>每个 tier 桶返回的玩家数量</td></tr>
+      <tr><td><code>offset</code></td><td>integer</td><td><code>0</code></td><td><code>&gt;= 0</code></td><td>每个 tier 桶内跳过的玩家数量</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="api-h3">请求示例</h3>
+  <pre class="api-code"><code>curl '<%= baseUrl %>/api/v1/rankings/Cart?count=10&amp;offset=0'</code></pre>
+
+  <h3 class="api-h3">响应示例（200）</h3>
+  <pre class="api-code"><code>{
+  "gamemode": "Cart",
+  "count": 10,
+  "offset": 0,
+  "tiers": {
+    "1": [],
+    "2": [
+      { "name": "Amateur_Poet", "points": 20, "rank": "SubtierCadet", "position": 1, "tier": "LT2" }
+    ],
+    "3": [
+      { "name": "SharkIrene", "points": 20, "rank": "SubtierCadet", "position": 1, "tier": "HT3" }
+    ],
+    "4": [
+      { "name": "P1co_SaMa", "points": 7,  "rank": "SubtierRookie", "position": 7, "tier": "LT4" }
+    ],
+    "5": [
+      { "name": "miaomimo",   "points": 1,  "rank": "SubtierRookie", "position": 18, "tier": "LT5" }
+    ]
+  }
+}</code></pre>
+
+  <p class="api-note">说明：tier 字符串的合法集合是 <code class="api-inline">HT1 / LT1 / HT2 / LT2 / …  / HT5 / LT5</code>（大小写不敏感）。无法解析的 tier 字符串会被服务器跳过并记录警告日志。</p>
+
+  <h3 class="api-h3">错误（404）</h3>
+  <pre class="api-code"><code>{ "error": "gamemode_not_found", "message": "gamemode 'X' does not exist" }</code></pre>
+</section>
+
+<section class="card">
+  <div class="section-head">
+    <p class="eyebrow">GET /api/v1/players/:name</p>
+    <h2>④ 单玩家详情</h2>
+    <p>返回单个玩家的总榜信息和<strong>全部 gamemode 段位</strong>（未上榜的 gamemode 字段为 <code class="api-inline">null</code>，便于机器人直接渲染整张段位表）。</p>
+  </div>
+
+  <h3 class="api-h3">路径参数</h3>
+  <table class="api-table">
+    <thead><tr><th>参数</th><th>类型</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td><code>name</code></td><td>string</td><td>玩家名，<strong>大小写不敏感</strong>。响应中的 <code>name</code> 字段会回填该玩家原始大小写。</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="api-h3">请求示例</h3>
+  <pre class="api-code"><code>curl <%= baseUrl %>/api/v1/players/SharkIrene</code></pre>
+
+  <h3 class="api-h3">响应示例（200）</h3>
+  <pre class="api-code"><code>{
+  "name": "SharkIrene",
+  "points": 20,
+  "rank": "SubtierCadet",
+  "position": 1,
+  "categories": {
+    "Cart": "HT3",
+    "DiamondSMP": "HT3",
+    "Spear": null,
+    "Spear Mace": null,
+    "Speed": null
+  }
+}</code></pre>
+
+  <h3 class="api-h3">错误（404）</h3>
+  <pre class="api-code"><code>{ "error": "not_found", "message": "player 'X' not found" }</code></pre>
+</section>
+
+<section class="card">
+  <div class="section-head">
+    <p class="eyebrow">参考</p>
+    <h2>规范与变更</h2>
+  </div>
+  <ul class="api-list">
+    <li>当前 API 版本：<code class="api-inline">v1</code>。后续不向后兼容的修改会使用 <code class="api-inline">/api/v2/</code> 等新前缀。</li>
+    <li>所有 tier 字符串都是 <code class="api-inline">/^(HT|LT)([1-5])$/i</code> 匹配，响应中规范化为大写。</li>
+    <li>限流是 per-IP 滚动 60 秒窗口；触发上限后等待 <code class="api-inline">Retry-After</code> 秒数即可继续请求。</li>
+  </ul>
+</section>
+
+<%- include('partials/footer') %>

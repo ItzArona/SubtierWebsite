@@ -136,6 +136,31 @@ const mailIpLimiter = rateLimit({
   message: '邮件发送过于频繁，请 1 分钟后重试'
 });
 
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: { trustProxy: false },
+  handler: (req, res) => {
+    const reset = req.rateLimit && req.rateLimit.resetTime;
+    const retryAfter = reset ? Math.max(1, Math.ceil((reset.getTime() - Date.now()) / 1000)) : 60;
+    res.setHeader('Retry-After', String(retryAfter));
+    res.status(429).json({ error: 'rate_limited', message: `too many requests, retry after ${retryAfter} seconds` });
+  }
+});
+
+function apiCors(req, res, next) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Max-Age', '86400');
+  if (req.method === 'OPTIONS') return res.status(204).end();
+  next();
+}
+
+app.use('/api/v1', apiCors, apiLimiter, require('./routes/api'));
+
 const csrfProtection = csurf();
 app.use(csrfProtection);
 
@@ -208,6 +233,13 @@ app.get('/', async (req, res, next) => {
       stats: { totalPlayers: entries.length, totalCategories: categories.length }
     });
   } catch (error) { next(error); }
+});
+
+app.get('/api/docs', (req, res) => {
+  const proto = req.protocol;
+  const host = req.get('host');
+  const baseUrl = `${proto}://${host}`;
+  res.render('api-docs', { title: 'API 文档', baseUrl });
 });
 
 // ---------- Auth: login ----------

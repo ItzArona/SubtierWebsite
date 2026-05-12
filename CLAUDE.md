@@ -61,6 +61,9 @@ Don't sprinkle inline role checks; reuse the middleware. The 403 path renders `v
 
 `/admin/login` is a 302 to `/login`; the unified `/login` accepts username **or** email plus password. Successful login regenerates the session (anti-fixation) and stashes only `{ id, username, email, role }` (`publicUser`). Never put password hashes or tokens on the session object.
 
+Registration (`POST /register`) is gated by `settings.registrationEnabled`. If disabled, the GET returns 404 and the nav hides the Register link. When enabled, registration creates a `User` row with `emailVerified: false`, generates a **6-digit numeric code** stored in `verifyToken` with **5-minute** expiry (`VERIFY_TTL_MS`) and `verifyAttempts: 0`, and sends the verification email **before** persisting the row — if the Resend call fails, no user is written. The user is then redirected to `/verify?email=...` where they paste the code. The verify endpoint (`POST /verify`) takes `{ email, code }`, uses `timingSafeEqualString` for the comparison, increments `verifyAttempts` on each wrong code, and after `MAX_CODE_ATTEMPTS` (5) failures invalidates the code entirely — the user must then click "重新发送" to issue a fresh one. There is no GET token-link verification flow anymore; `findUserByVerifyToken` / `findUserByPasswordResetToken` in `dataStore` are unused leftover exports.
+
+`POST /resend-verification` re-issues a fresh 6-digit code (subject to the per-user mail cooldown — see below) and resets `verifyAttempts`. `POST /forgot` issues a password-reset code; the reset page (`GET /reset?email=...`) collects `{ email, code, password, passwordConfirm }` and `POST /reset` consumes them. Reset codes also expire in 5 minutes (`RESET_TTL_MS`) and share the same `MAX_CODE_ATTEMPTS` brute-force lockout via `resetAttempts`. `/forgot` silently no-ops when the email maps to a SuperAdmin or to an OAuth-only account (no `passwordHash`), but **always** 302s to `/reset?email=...` so account existence isn't leaked through the response. To reset a SuperAdmin password, change `ADMIN_PASSWORD` env and wipe `data/users.json` to re-seed.
 Registration (`POST /register`) is gated by `settings.registrationEnabled`. If disabled, the GET returns 404 and the nav hides the Register link. When enabled, registration creates a `User` row with `emailVerified: false`, generates a **6-digit numeric** `verifyToken` via `generateCode()` with **5-minute** expiry (`VERIFY_TTL_MS`), and sends the verification email **before** persisting the row — if the Resend call fails, no user is written. The user is then redirected to `/verify?email=...` to enter the code; `POST /verify` compares with `timingSafeEqualString` and tracks `user.verifyAttempts` against `MAX_CODE_ATTEMPTS` (5). On the 5th wrong code the current code is invalidated and the counter clears, forcing the user through `POST /resend-verification` for a fresh code. The render template is `views/verify.ejs` (there is no `verify-result.ejs`).
 
 `POST /resend-verification` re-issues a fresh code + email; `POST /forgot` issues a password-reset code email and **always** redirects to `/reset?email=...` regardless of whether the email exists (anti-enumeration). `POST /reset` consumes `{ email, code, password, passwordConfirm }`, with the same 6-digit / 5-minute / `MAX_CODE_ATTEMPTS` semantics, and on success also flips `emailVerified: true`. Reset codes expire in 5 minutes (`RESET_TTL_MS`). Forgot is a no-op for SuperAdmin (cannot be reset via email — change `ADMIN_PASSWORD` env then reseed via empty `data/users.json` if you really need it).
@@ -125,9 +128,34 @@ Do not relax CSP without a strong reason, and do **not** use `helmet({ contentSe
 
 Server-side flashes go through `setFlash(req, { kind, text })`, stored on `req.session.flash` and consumed-and-cleared by the layout (one read empties it). Use this for cross-redirect notices (e.g. "邮箱验证成功，请用账号 / 邮箱 + 密码登录") instead of appending to query strings.
 
+CSRF is enforced globally via `csurf` (npm package itself is deprecated upstream but functional; replace only with a deliberate plan). Every state-changing form **must** include `<input type="hidden" name="_csrf" value="<%= csrfToken %>">`. The token is exposed via `res.locals.csrfToken` by the bootstrap middleware in `server.js`, so EJS templates can use it directly. The global error handler maps `EBADCSRFTOKEN` to a friendly Chinese "安全校验失败" page telling the user to Ctrl+Shift+R — don't let CSRF errors fall through to the generic 500.
+
 ### Validation contract
 
 All POST bodies are validated with zod schemas in `src/utils/validation.js`. On failure, admin endpoints typically redirect to `?error=<code>` and the page maps the code to a Chinese string at render time — both the route and the view must stay in sync when adding new error codes. The zod schemas use `.transform()` to normalize empty-string fields (e.g. `testServer`) to `null`; don't strip empty strings yourself.
+
+### Public read-only API (`/api/v1/`)
+
+Four GET-only JSON endpoints for external bots, defined in `src/routes/api.js`:
+
+- `GET /api/v1/gamemodes` — array of all gamemode names (union of `entry.categories` keys, alphabetical).
+- `GET /api/v1/rankings?limit=&offset=` — overall leaderboard sorted by `position`. `limit` 1..200 default 50, `offset` >=0 default 0.
+- `GET /api/v1/rankings/:gamemode?count=&offset=` — gamemode rankings grouped into 5 tier buckets (`"1"`..`"5"`). `count` 1..50 default 10, applied **per bucket** (so a single call returns up to `count * 5` players). Within each bucket: HT sorts before LT, then `points` desc, then `name` asc. Gamemode lookup is case-insensitive; canonical case is returned in the response. Unparseable tier strings (anything not matching `/^(HT|LT)([1-5])$/i`) are `console.warn`'d and skipped.
+- `GET /api/v1/players/:name` — single player. `categories` includes **every** known gamemode key with `null` for the ones the player has no tier in. Player lookup is case-insensitive.
+
+All responses are `application/json; charset=utf-8` with `Cache-Control: public, max-age=60`. Errors use the envelope `{ error: "<code>", message: "<text>" }` — codes are `invalid_query` (400), `not_found` / `gamemode_not_found` (404), `rate_limited` (429), `internal_error` (500). The `testServer` field is intentionally **not** surfaced (it's a placeholder column right now).
+
+**Mount order is load-bearing.** In `src/server.js` the API is mounted **before** `app.use(csrfProtection)`:
+
+```js
+app.use('/api/v1', apiCors, apiLimiter, require('./routes/api'));
+```
+
+Otherwise csurf would chain the request and API errors would fall through to the HTML error handler. The API router has its own JSON error handler (and JSON 404 catch-all) at the end of `src/routes/api.js`; do not let API errors fall through to `server.js`'s EJS error handler.
+
+`apiLimiter` is 60 req/min per IP (separate from `loginLimiter` and `mailIpLimiter`). `apiCors` is hand-rolled (no `cors` package) and emits `Access-Control-Allow-Origin: *`, `…-Methods: GET, OPTIONS`, with `OPTIONS` short-circuited to 204.
+
+Spec: `docs/superpowers/specs/2026-05-12-public-api-design.md`. Plan: `docs/superpowers/plans/2026-05-12-public-api.md`.
 
 ### Things that look optional but aren't
 

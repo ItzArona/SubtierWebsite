@@ -18,6 +18,7 @@
         </button>
         <nav id="siteNav">
           <a href="/" class="nav-link">榜单</a>
+          <a href="/api/docs" class="nav-link">API</a>
           <% if (currentUser && (currentUser.role === 'Admin' || currentUser.role === 'SuperAdmin')) { %>
             <a href="/admin" class="nav-link">仪表盘</a>
             <a href="/admin/categories" class="nav-link">细分项目</a>
