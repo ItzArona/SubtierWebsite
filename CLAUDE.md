@@ -124,6 +124,29 @@ CSRF is enforced globally via `csurf` (npm package itself is deprecated upstream
 
 All POST bodies are validated with zod schemas in `src/utils/validation.js`. On failure, admin endpoints typically redirect to `?error=<code>` and the page maps the code to a Chinese string at render time — both the route and the view must stay in sync when adding new error codes. The zod schemas use `.transform()` to normalize empty-string fields (e.g. `testServer`) to `null`; don't strip empty strings yourself.
 
+### Public read-only API (`/api/v1/`)
+
+Four GET-only JSON endpoints for external bots, defined in `src/routes/api.js`:
+
+- `GET /api/v1/gamemodes` — array of all gamemode names (union of `entry.categories` keys, alphabetical).
+- `GET /api/v1/rankings?limit=&offset=` — overall leaderboard sorted by `position`. `limit` 1..200 default 50, `offset` >=0 default 0.
+- `GET /api/v1/rankings/:gamemode?count=&offset=` — gamemode rankings grouped into 5 tier buckets (`"1"`..`"5"`). `count` 1..50 default 10, applied **per bucket** (so a single call returns up to `count * 5` players). Within each bucket: HT sorts before LT, then `points` desc, then `name` asc. Gamemode lookup is case-insensitive; canonical case is returned in the response. Unparseable tier strings (anything not matching `/^(HT|LT)([1-5])$/i`) are `console.warn`'d and skipped.
+- `GET /api/v1/players/:name` — single player. `categories` includes **every** known gamemode key with `null` for the ones the player has no tier in. Player lookup is case-insensitive.
+
+All responses are `application/json; charset=utf-8` with `Cache-Control: public, max-age=60`. Errors use the envelope `{ error: "<code>", message: "<text>" }` — codes are `invalid_query` (400), `not_found` / `gamemode_not_found` (404), `rate_limited` (429), `internal_error` (500). The `testServer` field is intentionally **not** surfaced (it's a placeholder column right now).
+
+**Mount order is load-bearing.** In `src/server.js` the API is mounted **before** `app.use(csrfProtection)`:
+
+```js
+app.use('/api/v1', apiCors, apiLimiter, require('./routes/api'));
+```
+
+Otherwise csurf would chain the request and API errors would fall through to the HTML error handler. The API router has its own JSON error handler (and JSON 404 catch-all) at the end of `src/routes/api.js`; do not let API errors fall through to `server.js`'s EJS error handler.
+
+`apiLimiter` is 60 req/min per IP (separate from `loginLimiter` and `mailIpLimiter`). `apiCors` is hand-rolled (no `cors` package) and emits `Access-Control-Allow-Origin: *`, `…-Methods: GET, OPTIONS`, with `OPTIONS` short-circuited to 204.
+
+Spec: `docs/superpowers/specs/2026-05-12-public-api-design.md`. Plan: `docs/superpowers/plans/2026-05-12-public-api.md`.
+
 ### Things that look optional but aren't
 
 - `APP_BASE_URL` is used to construct the verify-email link, the reset-password link, and the OAuth redirect URI. Wrong here = email links 404 and OAuth callback rejected by Microsoft.
